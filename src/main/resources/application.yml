@@ -1,0 +1,37 @@
+# Skyeng API Configuration
+skyeng:
+  api:
+    base-url: https://dictionary.skyeng.ru
+
+# Server Configuration
+server:
+  port: 8080
+
+# Database Configuration
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/learn_en_word
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  cache:
+    jcache:
+      config: classpath:ehcache.xml
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.zoirs.learn_en_word: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
