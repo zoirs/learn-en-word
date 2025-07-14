@@ -1,5 +1,6 @@
 package com.zoirs.learn_en_word.entity;
 
+import com.zoirs.learn_en_word.model.WordEntity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,15 +14,15 @@ import java.time.LocalDateTime;
 public class UserWord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
+    private Integer id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "word_id", nullable = false)
-    private Word word;
+    private WordEntity word;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -32,7 +33,7 @@ public class UserWord {
     private LocalDateTime nextReviewDate = LocalDateTime.now();
     private int learningStage = 0; // Used for spaced repetition
     
-    public UserWord(User user, Word word) {
+    public UserWord(User user, WordEntity word) {
         this.user = user;
         this.word = word;
     }

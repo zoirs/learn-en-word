@@ -23,7 +23,7 @@ public interface WordMapper {
     WordEntity toEntity(Word dto);
     
     //@Mapping(target = "word", ignore = true)
-    MeaningEntity toEntity(Meaning dto);
+    MeaningEntity toEntity(Meaning dto, Integer id);
     
     //@Mapping(target = "meaning", ignore = true)
     TranslationEntity toEntity(Translation dto);

@@ -15,19 +15,19 @@ import java.util.List;
 @Setter
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "wordCache")
 public class WordEntity extends BaseEntity {
-    
+
     @Column(nullable = false, unique = true)
     private String text;
-    
+
     @OneToMany(mappedBy = "word", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<MeaningEntity> meaningEntities = new ArrayList<>();
-    
+
     public void addMeaning(MeaningEntity meaningEntity) {
         meaningEntities.add(meaningEntity);
         meaningEntity.setWord(this);
     }
-    
+
     public void removeMeaning(MeaningEntity meaningEntity) {
         meaningEntities.remove(meaningEntity);
         meaningEntity.setWord(null);

@@ -32,7 +32,7 @@ public class DictionaryCacheService {
     private final WordMapper wordMapper;
 
     @Cacheable(value = "wordSearchCache", key = "#search.toLowerCase()")
-    @Transactional(readOnly = true)
+//   //  @Transactional(readOnly = true)
     public List<Word> searchWords(String search) {
         log.debug("Searching for words in cache or API: {}", search);
 
@@ -57,7 +57,7 @@ public class DictionaryCacheService {
     }
 
     @Cacheable(value = "meaningCache", key = "#ids")
-    @Transactional(readOnly = true)
+   //  @Transactional(readOnly = true)
     public List<Meaning> getMeanings(String ids) {
         log.debug("Getting meanings from cache or API for IDs: {}", ids);
 
@@ -68,7 +68,8 @@ public class DictionaryCacheService {
         List<MeaningEntity> cachedMeanings = meaningRepository.findByExternalIdIn(idList);
         List<String> foundIds = cachedMeanings.stream()
                 .map(MeaningEntity::getExternalId)
-                .collect(Collectors.toList());
+                .map(String::valueOf)
+                .toList();
 
         // Check if all requested IDs were found in cache
         List<String> missingIds = idList.stream()
@@ -95,7 +96,7 @@ public class DictionaryCacheService {
 
             // Convert DTOs to entities for the response
             List<MeaningEntity> newMeanings = apiMeanings.stream()
-                    .map(wordMapper::toEntity)
+                    .map(dto -> wordMapper.toEntity(dto, null))
                     .collect(Collectors.toList());
 
             // Combine cached and new meanings
@@ -121,8 +122,7 @@ public class DictionaryCacheService {
                 .filter(Objects::nonNull)
                 .forEach(word -> {
                     // Check if word already exists
-                    Optional<WordEntity> existingWord = 
-                            wordRepository.findByText(word.getText());
+                    Optional<WordEntity> existingWord = wordRepository.findByText(word.getText());
 
                     if (existingWord.isPresent()) {
                         // Update existing word
@@ -135,11 +135,11 @@ public class DictionaryCacheService {
                     } else {
                         // Save new word
                         wordRepository.save(word);
-                    }
+                    }//Row was updated or deleted by another transaction (or unsaved-value mapping was incorrect): [com.zoirs.learn_en_word.model.WordEntity#1463]
                 });
     }
 
-    @Transactional
+   //  @Transactional
     public void saveMeaningsToCache(List<Meaning> meanings) {
         if (meanings == null || meanings.isEmpty()) {
             return;
@@ -148,7 +148,7 @@ public class DictionaryCacheService {
         log.debug("Saving {} meanings to database cache", meanings.size());
 
         meanings.stream()
-                .map(wordMapper::toEntity)
+                .map(dto -> wordMapper.toEntity(dto, null))
                 .filter(Objects::nonNull)
                 .forEach(meaning -> {
                     // Check if meaning already exists
@@ -172,5 +172,9 @@ public class DictionaryCacheService {
     @CacheEvict(allEntries = true, cacheNames = {"wordSearchCache", "meaningCache"})
     public void clearAllCaches() {
         log.info("Cleared all caches");
+    }
+
+    public void searchWordsForUser(String word, Long userId) {
+
     }
 }

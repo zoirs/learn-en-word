@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Meaning {
-    private String id;
+    private Integer id;
     @JsonProperty("wordId")
     private Integer wordId;
     @JsonProperty("difficultyLevel")

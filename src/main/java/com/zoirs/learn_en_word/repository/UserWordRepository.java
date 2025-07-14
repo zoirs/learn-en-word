@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,4 +28,6 @@ public interface UserWordRepository extends JpaRepository<UserWord, Long> {
     boolean existsByUserIdAndWordId(Long userId, Long wordId);
 
     Optional<UserWord> findByUserIdAndWordId(Long userId, Long wordId);
+
+    List<UserWord> findByUserIdAndStatus(Long userId, UserWord.LearningStatus learningStatus);
 }

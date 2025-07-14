@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface MeaningRepository extends JpaRepository<MeaningEntity, Long> {
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
-    Optional<MeaningEntity> findByExternalId(String externalId);
+    Optional<MeaningEntity> findByExternalId(Integer externalId);
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     List<MeaningEntity> findByWordId(Integer wordId);
@@ -24,5 +24,5 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Long> {
     List<MeaningEntity> findByExternalIdIn(List<String> externalIds);
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
-    boolean existsByExternalId(String externalId);
+    boolean existsByExternalId(Integer externalId);
 }

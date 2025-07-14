@@ -22,10 +22,11 @@ public abstract class WordMapperImpl implements WordMapper {
 
         WordEntity wordEntity = new WordEntity();
         wordEntity.setText(dto.getText());
+        wordEntity.setId(Long.valueOf(dto.getId()));
 
         if (dto.getMeanings() != null) {
             dto.getMeanings().stream()
-                    .map(this::toEntity)
+                    .map(dto1 -> toEntity(dto1, dto.getId()))
                     .forEach(wordEntity::addMeaning);
         }
 
@@ -33,14 +34,16 @@ public abstract class WordMapperImpl implements WordMapper {
     }
 
     @Override
-    public MeaningEntity toEntity(com.zoirs.learn_en_word.api.dto.skyeng.Meaning dto) {
+    public MeaningEntity toEntity(Meaning dto, Integer id) {
         if (dto == null) {
             return null;
         }
 
         MeaningEntity meaning = new MeaningEntity();
+
         meaning.setExternalId(dto.getId());
-        meaning.setWordId(dto.getWordId());
+        meaning.setWordId((dto.getWordId() != null) ? dto.getWordId() : id);
+        meaning.setId(Long.valueOf(dto.getId()));
         meaning.setDifficultyLevel(dto.getDifficultyLevel());
         meaning.setPartOfSpeechCode(dto.getPartOfSpeechCode());
         meaning.setPrefix(dto.getPrefix());

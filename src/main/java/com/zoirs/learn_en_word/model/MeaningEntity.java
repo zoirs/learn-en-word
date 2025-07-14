@@ -18,7 +18,7 @@ import java.util.List;
 public class MeaningEntity extends BaseEntity {
     
     @Column(name = "external_id", unique = true)
-    private String externalId;
+    private Integer externalId;
     
     @Column(name = "word_id")
     private Integer wordId;
