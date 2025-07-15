@@ -4,9 +4,7 @@ import com.zoirs.learn_en_word.api.dto.skyeng.*;
 import com.zoirs.learn_en_word.model.*;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,9 +18,8 @@ public abstract class WordMapperImpl implements WordMapper {
             return null;
         }
 
-        WordEntity wordEntity = new WordEntity();
+        WordEntity wordEntity = new WordEntity(Long.valueOf(dto.getId()));
         wordEntity.setText(dto.getText());
-        wordEntity.setId(Long.valueOf(dto.getId()));
 
         if (dto.getMeanings() != null) {
             dto.getMeanings().stream()
@@ -38,12 +35,12 @@ public abstract class WordMapperImpl implements WordMapper {
         if (dto == null) {
             return null;
         }
+        Long id1 = Long.valueOf(dto.getId());
 
-        MeaningEntity meaning = new MeaningEntity();
+        MeaningEntity meaning = new MeaningEntity(id1);
 
         meaning.setExternalId(dto.getId());
         meaning.setWordId((dto.getWordId() != null) ? dto.getWordId() : id);
-        meaning.setId(Long.valueOf(dto.getId()));
         meaning.setDifficultyLevel(dto.getDifficultyLevel());
         meaning.setPartOfSpeechCode(dto.getPartOfSpeechCode());
         meaning.setPrefix(dto.getPrefix());
@@ -53,24 +50,24 @@ public abstract class WordMapperImpl implements WordMapper {
         meaning.setMnemonics(dto.getMnemonics());
 
         if (dto.getTranslation() != null) {
-            TranslationEntity translation = toEntity(dto.getTranslation());
+            TranslationEntity translation = toEntity(dto.getTranslation(), id1);
             meaning.setTranslation(translation);
         }
 
         if (dto.getImages() != null) {
             dto.getImages().stream()
-                    .map(this::toEntity)
+                    .map(dto1 -> toEntity(dto1, dto.getId()))
                     .forEach(meaning::addImage);
         }
 
         if (dto.getDefinition() != null) {
-            DefinitionEntity definition = toEntity(dto.getDefinition());
+            DefinitionEntity definition = toEntity(dto.getDefinition(), dto.getId());
             meaning.setDefinition(definition);
         }
 
         if (dto.getExamples() != null) {
             dto.getExamples().stream()
-                    .map(this::toEntity)
+                    .map(dto1 -> toEntity(dto1, Long.valueOf(dto.getId())))
                     .forEach(meaning::addExample);
         }
 

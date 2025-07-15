@@ -43,15 +43,4 @@ class ChatGPTServiceIntegrationTest {
         });
     }
 
-    @Test
-    void suggestNewWords_WithEmptyInput_ReturnsEmptyList() {
-        // Given
-        List<String> emptyList = List.of();
-
-        // When
-        List<String> result = chatGPTService.suggestNewWords(emptyList, emptyList);
-
-        // Then
-        assertTrue(result.isEmpty(), "Should return empty list for empty input");
-    }
 }

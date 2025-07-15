@@ -20,4 +20,11 @@ public class DefinitionEntity extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning_id")
     private MeaningEntity meaning;
+
+    public DefinitionEntity(Integer id) {
+        super(Long.valueOf(id));
+    }
+
+    private DefinitionEntity() {
+    }
 }

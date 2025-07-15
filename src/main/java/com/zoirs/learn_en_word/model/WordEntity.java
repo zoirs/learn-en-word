@@ -23,6 +23,13 @@ public class WordEntity extends BaseEntity {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<MeaningEntity> meaningEntities = new ArrayList<>();
 
+    public WordEntity(Long id) {
+        super(id);
+    }
+
+    public WordEntity() {
+    }
+
     public void addMeaning(MeaningEntity meaningEntity) {
         meaningEntities.add(meaningEntity);
         meaningEntity.setWord(this);

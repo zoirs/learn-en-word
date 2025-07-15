@@ -1,5 +1,6 @@
 package com.zoirs.learn_en_word.entity;
 
+import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.model.WordEntity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,10 @@ public class UserWord {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "word_id", nullable = false)
     private WordEntity word;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "meaning_id") //todo , nullable = false
+    private MeaningEntity meaning;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

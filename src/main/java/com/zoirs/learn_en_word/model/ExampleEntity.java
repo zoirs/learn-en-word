@@ -20,4 +20,8 @@ public class ExampleEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning_id")
     private MeaningEntity meaning;
+
+    public ExampleEntity(Long id) {
+        super(id);
+    }
 }

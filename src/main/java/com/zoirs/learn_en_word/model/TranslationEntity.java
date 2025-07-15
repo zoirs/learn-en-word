@@ -18,4 +18,11 @@ public class TranslationEntity extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning_id")
     private MeaningEntity meaning;
+
+    public TranslationEntity(Long id) {
+        super(id);
+    }
+
+    public TranslationEntity() {
+    }
 }

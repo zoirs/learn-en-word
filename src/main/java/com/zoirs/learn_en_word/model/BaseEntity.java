@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 public abstract class BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @CreationTimestamp
@@ -23,4 +23,15 @@ public abstract class BaseEntity {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    protected BaseEntity(Long id) {
+        this.id = id;
+    }
+
+    protected BaseEntity() {
+    }
+
+//    @Version
+//    @Column(name = "version")
+//    private Long version;
 }

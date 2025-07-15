@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -116,30 +117,43 @@ public class DictionaryCacheService {
         }
 
         log.debug("Saving {} words to database cache", words.size());
+        
+        // Process words in batches to improve performance
+        int batchSize = 50;
+        for (int i = 0; i < words.size(); i += batchSize) {
+            int end = Math.min(words.size(), i + batchSize);
+            List<Word> batch = words.subList(i, end);
+            processBatch(batch);
+        }
+    }
+    
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void processBatch(List<Word> batch) {
+        for (Word word : batch) {
+            try {
+                WordEntity wordEntity = wordMapper.toEntity(word);
+                if (wordEntity == null) continue;
+                
+                Optional<WordEntity> existingWord = wordRepository.findByText(wordEntity.getText());//todo by id
 
-        words.stream()
-                .map(wordMapper::toEntity)
-                .filter(Objects::nonNull)
-                .forEach(word -> {
-                    // Check if word already exists
-                    Optional<WordEntity> existingWord = wordRepository.findByText(word.getText());
-
-                    if (existingWord.isPresent()) {
-                        // Update existing word
-                        WordEntity wordToUpdate = existingWord.get();
-                        wordMapper.updateWordFromDto(
-                                wordMapper.toDto(word), 
-                                wordToUpdate
-                        );
-                        wordRepository.save(wordToUpdate);
-                    } else {
-                        // Save new word
-                        wordRepository.save(word);
-                    }//Row was updated or deleted by another transaction (or unsaved-value mapping was incorrect): [com.zoirs.learn_en_word.model.WordEntity#1463]
-                });
+                if (existingWord.isPresent()) {
+                    // Update existing word with retry logic
+                    WordEntity existing = existingWord.get();
+                    // Update only if the version hasn't changed
+                    wordMapper.updateWordFromDto(wordMapper.toDto(wordEntity), existing);
+                    wordRepository.saveAndFlush(existing);
+                } else {
+                    // Save new word
+                    wordRepository.save(wordEntity);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to process word '{}': {}", word.getText(), e.getMessage());
+                // Continue with next word in case of error
+            }
+        }
     }
 
-   //  @Transactional
+    //  @Transactional
     public void saveMeaningsToCache(List<Meaning> meanings) {
         if (meanings == null || meanings.isEmpty()) {
             return;

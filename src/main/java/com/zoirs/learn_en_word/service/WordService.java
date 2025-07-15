@@ -11,7 +11,6 @@ import com.zoirs.learn_en_word.repository.WordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,7 +57,7 @@ public class WordService {
     }
     
    //  @Transactional
-    public void addWordsToLearning(Long userId, Integer wordId) {
+    public void addWordsToLearning(Long userId, Integer wordId, Integer meaningId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -98,7 +97,7 @@ public class WordService {
                         Optional<Word> first = words.stream().filter(q -> q.getText().equals(word))
                                 .findFirst();
                         first.ifPresent(word1 -> {
-                            addWordsToLearning(userId, word1.getMeanings().get(0).getId());// todo как выбрать правильный id
+                            addWordsToLearning(userId, word1.getId(), word1.getMeanings().get(0).getId());// todo как выбрать правильный id
                         });
                     }
                 }

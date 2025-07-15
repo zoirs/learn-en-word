@@ -68,11 +68,11 @@ class WordServiceIntegrationTest {
     void ensureEnoughWordsForLearning_WhenSomeWordsExist_ShouldAddMoreToReachMinimum() {
         // Given
         // Add some words to the database
-        WordEntity word1 = new WordEntity();
+        WordEntity word1 = new WordEntity(-1L);
         word1.setText("apple");
         wordRepository.save(word1);
 
-        WordEntity word2 = new WordEntity();
+        WordEntity word2 = new WordEntity(-2L);
         word2.setText("banana");
         wordRepository.save(word2);
 
@@ -96,7 +96,7 @@ class WordServiceIntegrationTest {
         // Given
         // Add more than minimum required words
         for (int i = 0; i < 15; i++) {
-            WordEntity word = new WordEntity();
+            WordEntity word = new WordEntity((long) (0-i));
             word.setText("word" + i);
             wordRepository.save(word);
 

@@ -46,8 +46,8 @@ class ChatGPTServiceSimpleTest {
         choice.setMessage(message);
         response.setChoices(List.of(choice));
 
-//        when(chatGPTClient.generateResponse(any()))
-//                .thenReturn(ResponseEntity.ok(response));
+        when(chatGPTClient.generateResponse(any()))
+                .thenReturn(ResponseEntity.ok(response));
 
         // When
         List<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);

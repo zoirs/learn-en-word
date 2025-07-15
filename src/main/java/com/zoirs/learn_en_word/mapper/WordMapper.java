@@ -7,8 +7,6 @@ import com.zoirs.learn_en_word.api.dto.skyeng.Image;
 import com.zoirs.learn_en_word.api.dto.skyeng.Definition;
 import com.zoirs.learn_en_word.api.dto.skyeng.Example;
 import com.zoirs.learn_en_word.model.*;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
@@ -26,16 +24,16 @@ public interface WordMapper {
     MeaningEntity toEntity(Meaning dto, Integer id);
     
     //@Mapping(target = "meaning", ignore = true)
-    TranslationEntity toEntity(Translation dto);
+    TranslationEntity toEntity(Translation dto, Long id);
     
     //@Mapping(target = "meaning", ignore = true)
-    ImageEntity toEntity(Image dto);
+    ImageEntity toEntity(Image dto, Integer id);
     
     //@Mapping(target = "meaning", ignore = true)
-    DefinitionEntity toEntity(Definition dto);
+    DefinitionEntity toEntity(Definition dto, Integer id);
     
     //@Mapping(target = "meaning", ignore = true)
-    ExampleEntity toEntity(Example dto);
+    ExampleEntity toEntity(Example dto, Long id);
     
     // Entity to DTO mappings
     Word toDto(WordEntity entity);

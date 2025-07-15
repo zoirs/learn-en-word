@@ -56,7 +56,14 @@ public class MeaningEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "word_entity_id")
     private WordEntity word;
-    
+
+    public MeaningEntity(Long id) {
+        super(id);
+    }
+
+    public MeaningEntity() {
+    }
+
     public void setTranslation(TranslationEntity translationEntity) {
         if (translationEntity == null) {
             if (this.translationEntity != null) {

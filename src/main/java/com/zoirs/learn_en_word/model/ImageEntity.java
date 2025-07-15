@@ -17,4 +17,11 @@ public class ImageEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning_id")
     private MeaningEntity meaning;
+
+    public ImageEntity(Long id) {
+        super(id);
+    }
+
+    public ImageEntity() {
+    }
 }
