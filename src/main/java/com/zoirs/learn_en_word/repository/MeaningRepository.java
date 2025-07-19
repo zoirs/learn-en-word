@@ -18,7 +18,10 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Long> {
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     List<MeaningEntity> findByWordId(Integer wordId);
-    
+
+    @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
+    List<MeaningEntity> findByText(String text);
+
     @Query("SELECT m FROM MeaningEntity m WHERE m.externalId IN :externalIds")
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     List<MeaningEntity> findByExternalIdIn(List<String> externalIds);

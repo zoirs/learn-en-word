@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,8 +36,8 @@ class ChatGPTServiceSimpleTest {
     @Test
     void suggestNewWords_WithValidInput_ReturnsListOfWords() {
         // Given
-        List<String> knownWords = List.of("apple", "book", "car");
-        List<String> learningWords = List.of("dog", "elephant", "fruit");
+        Set<String> knownWords = Set.of("apple", "book", "car");
+        Set<String> learningWords = Set.of("dog", "elephant", "fruit");
 
         // Mock the response
         ChatGPTResponse response = new ChatGPTResponse();
@@ -50,7 +51,7 @@ class ChatGPTServiceSimpleTest {
                 .thenReturn(ResponseEntity.ok(response));
 
         // When
-        List<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
+        Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
 
         // Then
         assertNotNull(result, "Returned words list should not be null");
@@ -67,12 +68,12 @@ class ChatGPTServiceSimpleTest {
     @Test
     void suggestNewWords_WithEmptyInput_ReturnsEmptyList() {
         // Given
-        List<String> emptyList = List.of();
+        Set<String> emptyList = Set.of();
         when(chatGPTClient.generateResponse(any()))
                 .thenReturn(ResponseEntity.ok(new ChatGPTResponse()));
 
         // When
-        List<String> result = chatGPTService.suggestNewWords(emptyList, emptyList);
+        Set<String> result = chatGPTService.suggestNewWords(emptyList, emptyList);
 
         // Then
         assertTrue(result.isEmpty(), "Should return empty list for empty input");
@@ -81,14 +82,14 @@ class ChatGPTServiceSimpleTest {
     @Test
     void suggestNewWords_WhenApiFails_ReturnsEmptyList() {
         // Given
-        List<String> knownWords = List.of("apple");
-        List<String> learningWords = List.of("banana");
+        Set<String> knownWords = Set.of("apple");
+        Set<String> learningWords = Set.of("banana");
         
         when(chatGPTClient.generateResponse(any()))
                 .thenReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
 
         // When
-        List<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
+        Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
 
         // Then
         assertNotNull(result, "Should return empty list instead of null");

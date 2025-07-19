@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,11 +23,11 @@ class ChatGPTServiceIntegrationTest {
     @Test
     void suggestNewWords_WithValidInput_ReturnsListOfWords() {
         // Given
-        List<String> knownWords = List.of("apple", "book", "car");
-        List<String> learningWords = List.of("dog", "elephant", "fruit");
+        Set<String> knownWords = Set.of("apple", "book", "car");
+        Set<String> learningWords = Set.of("dog", "elephant", "fruit");
 
         // When
-        List<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
+        Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
 
         // Then
         assertNotNull(result, "Returned words list should not be null");

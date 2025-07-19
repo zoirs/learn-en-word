@@ -19,24 +19,20 @@ public class WordEntity extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String text;
 
-    @OneToMany(mappedBy = "word", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "wordId", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<MeaningEntity> meaningEntities = new ArrayList<>();
 
-    public WordEntity(Long id) {
-        super(id);
-    }
-
-    public WordEntity() {
-    }
+    @Column(name = "external_id", unique = true)
+    private Integer externalId;
 
     public void addMeaning(MeaningEntity meaningEntity) {
         meaningEntities.add(meaningEntity);
-        meaningEntity.setWord(this);
+        meaningEntity.setWordId(Math.toIntExact(this.getId()));
     }
 
     public void removeMeaning(MeaningEntity meaningEntity) {
         meaningEntities.remove(meaningEntity);
-        meaningEntity.setWord(null);
+        meaningEntity.setWordId(null);
     }
 }

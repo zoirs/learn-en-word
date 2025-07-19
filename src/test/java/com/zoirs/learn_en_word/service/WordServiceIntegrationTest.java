@@ -3,7 +3,9 @@ package com.zoirs.learn_en_word.service;
 import com.zoirs.learn_en_word.TestApplicationRunner;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.entity.UserWord;
+import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.model.WordEntity;
+import com.zoirs.learn_en_word.repository.MeaningRepository;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import com.zoirs.learn_en_word.repository.UserWordRepository;
 import com.zoirs.learn_en_word.repository.WordRepository;
@@ -14,7 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,6 +31,8 @@ class WordServiceIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private MeaningRepository meaningRepository;
     @Autowired
     private WordRepository wordRepository;
 
@@ -68,16 +71,19 @@ class WordServiceIntegrationTest {
     void ensureEnoughWordsForLearning_WhenSomeWordsExist_ShouldAddMoreToReachMinimum() {
         // Given
         // Add some words to the database
-        WordEntity word1 = new WordEntity(-1L);
+        WordEntity word1 = new WordEntity();
+        word1.setExternalId(-1);
         word1.setText("apple");
         wordRepository.save(word1);
+        MeaningEntity meaning = meaningRepository.save(new MeaningEntity());
 
-        WordEntity word2 = new WordEntity(-2L);
+        WordEntity word2 = new WordEntity();
         word2.setText("banana");
         wordRepository.save(word2);
+        meaningRepository.save(new MeaningEntity());
 
         // Add one word to user's learning list
-        UserWord userWord = new UserWord(testUser, word1);
+        UserWord userWord = new UserWord(testUser, word1, meaning);
         userWordRepository.save(userWord);
 
         // When
@@ -96,11 +102,12 @@ class WordServiceIntegrationTest {
         // Given
         // Add more than minimum required words
         for (int i = 0; i < 15; i++) {
-            WordEntity word = new WordEntity((long) (0-i));
+            WordEntity word = new WordEntity();
             word.setText("word" + i);
             wordRepository.save(word);
+            MeaningEntity meaning = meaningRepository.save(new MeaningEntity());
 
-            UserWord userWord = new UserWord(testUser, word);
+            UserWord userWord = new UserWord(testUser, word, meaning);
             userWordRepository.save(userWord);
         }
 

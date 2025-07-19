@@ -1,10 +1,13 @@
 package com.zoirs.learn_en_word.service;
 
+import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
 import com.zoirs.learn_en_word.api.dto.skyeng.Word;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.entity.UserWord;
 import com.zoirs.learn_en_word.exception.ResourceNotFoundException;
+import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.model.WordEntity;
+import com.zoirs.learn_en_word.repository.MeaningRepository;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import com.zoirs.learn_en_word.repository.UserWordRepository;
 import com.zoirs.learn_en_word.repository.WordRepository;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -24,6 +28,7 @@ public class WordService {
     
     private static final int MIN_WORDS_FOR_LEARNING = 10;
     
+    private final MeaningRepository meaningRepository;
     private final WordRepository wordRepository;
     private final UserWordRepository userWordRepository;
     private final UserRepository userRepository;
@@ -61,9 +66,11 @@ public class WordService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        WordEntity word = wordRepository.findById(wordId)
+        WordEntity word = wordRepository.findByExternalId(wordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Word not found"));
-        userWordRepository.save(new UserWord(user, word));
+        MeaningEntity meaning = meaningRepository.findByExternalId(meaningId)
+                .orElseThrow(() -> new ResourceNotFoundException("m not found"));
+        userWordRepository.save(new UserWord(user, word, meaning));
     }
     
 //   //  @Transactional
@@ -73,32 +80,30 @@ public class WordService {
         if (learningWordsCount < MIN_WORDS_FOR_LEARNING) {
             try {
                 // Get user's known and learning words
-                List<String> knownWords = userWordRepository.findByUserIdAndStatus(
+                Set<String> knownWords = userWordRepository.findByUserIdAndStatus(
                     userId, UserWord.LearningStatus.MASTERED
                 ).stream()
                 .map(uw -> uw.getWord().getText())
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
                 
-                List<String> learningWords = userWordRepository.findByUserIdAndStatus(
+                Set<String> learningWords = userWordRepository.findByUserIdAndStatus(
                     userId, UserWord.LearningStatus.LEARNING
                 ).stream()
                 .map(uw -> uw.getWord().getText())
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
                 
                 // Get word suggestions from ChatGPT
-                List<String> suggestedWordStrings = chatGPTService.suggestNewWords(
+                Set<String> suggestedWordStrings = chatGPTService.suggestNewWords(
                     knownWords, 
                     learningWords
                 );
 
                 if (!suggestedWordStrings.isEmpty()) {
                     for (String word : suggestedWordStrings) {
-                        List<Word> words = dictionaryCacheService.searchWords(word);
-                        Optional<Word> first = words.stream().filter(q -> q.getText().equals(word))
-                                .findFirst();
-                        first.ifPresent(word1 -> {
-                            addWordsToLearning(userId, word1.getId(), word1.getMeanings().get(0).getId());// todo как выбрать правильный id
-                        });
+                        List<Meaning> meanings = dictionaryCacheService.searchWords(word);
+                        for (Meaning meaning : meanings) {
+                            addWordsToLearning(userId, meaning.getWordId(), meaning.getId());// todo как выбрать правильный id
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -116,5 +121,9 @@ public class WordService {
     public UserWord getUserWordProgress(Long userId, Long wordId) {
         return userWordRepository.findByUserIdAndWordId(userId, wordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Word not found in user's learning list"));
+    }
+
+    public List<UserWord> getUserWords(Long userId) {
+        return userWordRepository.findByUserId(userId);
     }
 }

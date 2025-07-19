@@ -30,4 +30,6 @@ public interface UserWordRepository extends JpaRepository<UserWord, Long> {
     Optional<UserWord> findByUserIdAndWordId(Long userId, Long wordId);
 
     List<UserWord> findByUserIdAndStatus(Long userId, UserWord.LearningStatus learningStatus);
+
+    List<UserWord> findByUserId(Long userId);
 }

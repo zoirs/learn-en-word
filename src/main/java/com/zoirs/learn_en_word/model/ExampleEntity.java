@@ -21,7 +21,6 @@ public class ExampleEntity extends BaseEntity {
     @JoinColumn(name = "meaning_id")
     private MeaningEntity meaning;
 
-    public ExampleEntity(Long id) {
-        super(id);
-    }
+//    @Column(name = "external_id")
+//    private Integer externalId;
 }

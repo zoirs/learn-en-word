@@ -34,14 +34,14 @@ public class DictionaryCacheService {
 
     @Cacheable(value = "wordSearchCache", key = "#search.toLowerCase()")
 //   //  @Transactional(readOnly = true)
-    public List<Word> searchWords(String search) {
+    public List<Meaning> searchWords(String search) {
         log.debug("Searching for words in cache or API: {}", search);
 
         // First try to find in local database
-        List<WordEntity> cachedWords = wordRepository.findByTextContainingIgnoreCase(search);
+        List<MeaningEntity> cachedWords = meaningRepository.findByText(search);
         if (!cachedWords.isEmpty()) {
             log.debug("Found {} cached words matching: {}", cachedWords.size(), search);
-            return wordMapper.toDtoList(cachedWords);
+            return wordMapper.toMeaningDtoList(cachedWords);
         }
 
         // If not found in cache, call the API
@@ -50,11 +50,25 @@ public class DictionaryCacheService {
 
         // Save to cache for future use
         if (!apiWords.isEmpty()) {
-            log.debug("Saving {} words to cache for search: {}", apiWords.size(), search);
-            saveWordsToCache(apiWords);
+//            log.debug("Saving {} words to cache for search: {}", apiWords.size(), search);
+            Optional<Word> found = Optional.empty();
+            for (Word apiWord : apiWords) {
+                if (search.equals(apiWord.getText())) {
+                    found = Optional.of(apiWord);
+                    break;
+                }
+            }
+            if (found.isPresent()) {
+                Optional<Meaning> meaningO = found.get().getMeanings().stream().findFirst();
+                if (meaningO.isPresent()) {
+                    Meaning meaning = meaningO.get();
+                    List<Meaning> meanings = skyengDictionaryService.getMeanings(String.valueOf(meaning.getId()));
+                    saveMeaningsToCache(meanings);
+                    return meanings;
+                }
+            }
         }
-
-        return apiWords;
+        return new ArrayList<>();
     }
 
     @Cacheable(value = "meaningCache", key = "#ids")
@@ -162,23 +176,23 @@ public class DictionaryCacheService {
         log.debug("Saving {} meanings to database cache", meanings.size());
 
         meanings.stream()
-                .map(dto -> wordMapper.toEntity(dto, null))
                 .filter(Objects::nonNull)
                 .forEach(meaning -> {
                     // Check if meaning already exists
                     Optional<MeaningEntity> existingMeaning = 
-                            meaningRepository.findByExternalId(meaning.getExternalId());
+                            meaningRepository.findByExternalId(meaning.getId());
                     if (existingMeaning.isPresent()) {
                         // Update existing meaning
                         MeaningEntity meaningToUpdate = existingMeaning.get();
-                        wordMapper.updateMeaningFromDto(
-                                wordMapper.toDto(meaning),
-                                meaningToUpdate
-                        );
-                        meaningRepository.save(meaningToUpdate);
+//                        wordMapper.updateMeaningFromDto(
+//                                wordMapper.toDto(meaning),
+//                                meaningToUpdate
+//                        );
+//                        meaningRepository.save(meaningToUpdate);
                     } else {
                         // Save new meaning
-                        meaningRepository.save(meaning);
+                        MeaningEntity entity = wordMapper.toEntity(meaning, null);
+                        meaningRepository.save(entity);
                     }
                 });
     }

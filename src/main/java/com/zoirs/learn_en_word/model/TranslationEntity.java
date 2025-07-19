@@ -13,16 +13,11 @@ public class TranslationEntity extends BaseEntity {
     
     private String text;
     private String note;
-    
+    @Column(name = "external_id", unique = true)
+    private Integer externalId;
     @JsonBackReference
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning_id")
     private MeaningEntity meaning;
 
-    public TranslationEntity(Long id) {
-        super(id);
-    }
-
-    public TranslationEntity() {
-    }
 }

@@ -24,16 +24,16 @@ public interface WordMapper {
     MeaningEntity toEntity(Meaning dto, Integer id);
     
     //@Mapping(target = "meaning", ignore = true)
-    TranslationEntity toEntity(Translation dto, Long id);
+    TranslationEntity toEntity(Translation dto, MeaningEntity id);
     
     //@Mapping(target = "meaning", ignore = true)
-    ImageEntity toEntity(Image dto, Integer id);
+    ImageEntity toEntity(Image dto, MeaningEntity id);
     
     //@Mapping(target = "meaning", ignore = true)
-    DefinitionEntity toEntity(Definition dto, Integer id);
+    DefinitionEntity toEntity(Definition dto, MeaningEntity id);
     
     //@Mapping(target = "meaning", ignore = true)
-    ExampleEntity toEntity(Example dto, Long id);
+    ExampleEntity toEntity(Example dto, MeaningEntity id);
     
     // Entity to DTO mappings
     Word toDto(WordEntity entity);

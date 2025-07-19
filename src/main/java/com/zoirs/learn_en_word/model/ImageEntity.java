@@ -12,16 +12,13 @@ import lombok.Setter;
 public class ImageEntity extends BaseEntity {
     
     private String url;
-    
+
+    @Column(name = "external_id")
+    private Integer externalId;
+
     @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning_id")
     private MeaningEntity meaning;
 
-    public ImageEntity(Long id) {
-        super(id);
-    }
-
-    public ImageEntity() {
-    }
 }

@@ -10,21 +10,18 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DefinitionEntity extends BaseEntity {
-    
+
+    @Column(name = "external_id", unique = true)
+    private Integer externalId;
+
+    @Column(length = 2000)
     private String text;
-    
-    @Column(name = "sound_url")
+
+    @Column(name = "sound_url", length = 1024)
     private String soundUrl;
     
     @JsonBackReference
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning_id")
     private MeaningEntity meaning;
-
-    public DefinitionEntity(Integer id) {
-        super(Long.valueOf(id));
-    }
-
-    private DefinitionEntity() {
-    }
 }

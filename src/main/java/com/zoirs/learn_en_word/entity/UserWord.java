@@ -38,9 +38,10 @@ public class UserWord {
     private LocalDateTime nextReviewDate = LocalDateTime.now();
     private int learningStage = 0; // Used for spaced repetition
     
-    public UserWord(User user, WordEntity word) {
+    public UserWord(User user, WordEntity word, MeaningEntity meaning) {
         this.user = user;
         this.word = word;
+        this.meaning = meaning;
     }
     
     public void updateCorrectAnswer() {

@@ -3,14 +3,190 @@ package com.zoirs.learn_en_word.mapper;
 import com.zoirs.learn_en_word.api.dto.skyeng.*;
 import com.zoirs.learn_en_word.model.*;
 import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
+import org.springframework.stereotype.Component;
 
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
-public abstract class WordMapperImpl implements WordMapper {
+@Component
+//@Mapper(componentModel = "spring")
+public class WordMapperImpl implements WordMapper {
+
+
+    @Override
+    public TranslationEntity toEntity(Translation dto, MeaningEntity id) {
+        if ( dto == null && id == null ) {
+            return null;
+        }
+
+        TranslationEntity translationEntity = new TranslationEntity();
+
+        if ( dto != null ) {
+            translationEntity.setText( dto.getText() );
+            translationEntity.setNote( dto.getNote() );
+        }
+        translationEntity.setMeaning( id );
+
+        return translationEntity;
+    }
+
+    @Override
+    public ImageEntity toEntity(Image dto, MeaningEntity id) {
+        if ( dto == null && id == null ) {
+            return null;
+        }
+
+        ImageEntity imageEntity = new ImageEntity();
+
+        if ( dto != null ) {
+            imageEntity.setUrl( dto.getUrl() );
+        }
+        imageEntity.setMeaning(id);
+//        if ( id != null ) {
+//            imageEntity.setId( id );
+//        }
+
+        return imageEntity;
+    }
+
+    @Override
+    public DefinitionEntity toEntity(Definition dto, MeaningEntity id) {
+        if ( dto == null && id == null ) {
+            return null;
+        }
+
+        DefinitionEntity definitionEntity = new DefinitionEntity();
+        definitionEntity.setMeaning(id);
+        if ( dto != null ) {
+            definitionEntity.setText( dto.getText() );
+            definitionEntity.setSoundUrl( dto.getSoundUrl() );
+        }
+
+        return definitionEntity;
+    }
+
+    @Override
+    public ExampleEntity toEntity(Example dto, MeaningEntity id) {
+        if ( dto == null && id == null ) {
+            return null;
+        }
+
+        ExampleEntity exampleEntity = new ExampleEntity();
+        exampleEntity.setMeaning(id);
+//        exampleEntity.setMeaning();ExternalId(id);
+        if ( dto != null ) {
+            exampleEntity.setText( dto.getText() );
+            exampleEntity.setSoundUrl( dto.getSoundUrl() );
+        }
+
+        return exampleEntity;
+    }
+
+    @Override
+    public Word toDto(WordEntity entity) {
+        if ( entity == null ) {
+            return null;
+        }
+
+        Word word = new Word();
+
+        if ( entity.getId() != null ) {
+            word.setId( entity.getId().intValue() );
+        }
+        word.setText( entity.getText() );
+        List<Meaning> m=new ArrayList<>();
+        for (MeaningEntity meaningEntity : entity.getMeaningEntities()) {
+            m.add(toDto(meaningEntity));
+        }
+        word.setMeanings(m);
+
+        return word;
+    }
+
+    @Override
+    public Meaning toDto(MeaningEntity entity) {
+        if ( entity == null ) {
+            return null;
+        }
+
+        Meaning meaning = new Meaning();
+
+        if ( entity.getId() != null ) {
+            meaning.setId( entity.getId().intValue() );
+        }
+        meaning.setWordId( entity.getWordId() );
+        meaning.setDifficultyLevel( entity.getDifficultyLevel() );
+        meaning.setPartOfSpeechCode( entity.getPartOfSpeechCode() );
+        meaning.setPrefix( entity.getPrefix() );
+        meaning.setText( entity.getText() );
+        meaning.setSoundUrl( entity.getSoundUrl() );
+        meaning.setTranscription( entity.getTranscription() );
+        if ( entity.getUpdatedAt() != null ) {
+            meaning.setUpdatedAt( DateTimeFormatter.ISO_LOCAL_DATE_TIME.format( entity.getUpdatedAt() ) );
+        }
+        meaning.setMnemonics( entity.getMnemonics() );
+        meaning.setTranslation(toDto(entity.getTranslationEntity()));
+
+        return meaning;
+    }
+
+    @Override
+    public Translation toDto(TranslationEntity entity) {
+        if ( entity == null ) {
+            return null;
+        }
+
+        Translation translation = new Translation();
+
+        translation.setText( entity.getText() );
+        translation.setNote( entity.getNote() );
+
+        return translation;
+    }
+
+    @Override
+    public Image toDto(ImageEntity entity) {
+        if ( entity == null ) {
+            return null;
+        }
+
+        Image image = new Image();
+
+        image.setUrl( entity.getUrl() );
+
+        return image;
+    }
+
+    @Override
+    public Definition toDto(DefinitionEntity entity) {
+        if ( entity == null ) {
+            return null;
+        }
+
+        Definition definition = new Definition();
+
+        definition.setText( entity.getText() );
+        definition.setSoundUrl( entity.getSoundUrl() );
+
+        return definition;
+    }
+
+    @Override
+    public Example toDto(ExampleEntity entity) {
+        if ( entity == null ) {
+            return null;
+        }
+
+        Example example = new Example();
+
+        example.setText( entity.getText() );
+        example.setSoundUrl( entity.getSoundUrl() );
+
+        return example;
+    }
 
     @Override
     public WordEntity toEntity(com.zoirs.learn_en_word.api.dto.skyeng.Word dto) {
@@ -18,7 +194,8 @@ public abstract class WordMapperImpl implements WordMapper {
             return null;
         }
 
-        WordEntity wordEntity = new WordEntity(Long.valueOf(dto.getId()));
+        WordEntity wordEntity = new WordEntity();
+        wordEntity.setExternalId(dto.getId());
         wordEntity.setText(dto.getText());
 
         if (dto.getMeanings() != null) {
@@ -35,9 +212,8 @@ public abstract class WordMapperImpl implements WordMapper {
         if (dto == null) {
             return null;
         }
-        Long id1 = Long.valueOf(dto.getId());
 
-        MeaningEntity meaning = new MeaningEntity(id1);
+        MeaningEntity meaning = new MeaningEntity();
 
         meaning.setExternalId(dto.getId());
         meaning.setWordId((dto.getWordId() != null) ? dto.getWordId() : id);
@@ -50,24 +226,25 @@ public abstract class WordMapperImpl implements WordMapper {
         meaning.setMnemonics(dto.getMnemonics());
 
         if (dto.getTranslation() != null) {
-            TranslationEntity translation = toEntity(dto.getTranslation(), id1);
+            TranslationEntity translation = toEntity(dto.getTranslation(), meaning);
             meaning.setTranslation(translation);
         }
 
         if (dto.getImages() != null) {
-            dto.getImages().stream()
-                    .map(dto1 -> toEntity(dto1, dto.getId()))
-                    .forEach(meaning::addImage);
+            for (Image dto1 : dto.getImages()) {
+                ImageEntity entity = toEntity(dto1, meaning);
+                meaning.addImage(entity);
+            }
         }
 
         if (dto.getDefinition() != null) {
-            DefinitionEntity definition = toEntity(dto.getDefinition(), dto.getId());
+            DefinitionEntity definition = toEntity(dto.getDefinition(), meaning);
             meaning.setDefinition(definition);
         }
 
         if (dto.getExamples() != null) {
             dto.getExamples().stream()
-                    .map(dto1 -> toEntity(dto1, Long.valueOf(dto.getId())))
+                    .map(dto1 -> toEntity(dto1, meaning))
                     .forEach(meaning::addExample);
         }
 

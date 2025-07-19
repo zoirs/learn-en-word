@@ -23,7 +23,7 @@ public class Meaning {
     @JsonProperty("soundUrl")
     private String soundUrl;
     private String transcription;
-    private Properties properties;
+//    private Properties properties;
     @JsonProperty("updatedAt")
     private String updatedAt;
     private String mnemonics;

@@ -21,11 +21,11 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
     
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserWord> learningWords = new ArrayList<>();
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<UserWord> learningWords = new ArrayList<>();
     
-    public void addLearningWord(UserWord userWord) {
-        learningWords.add(userWord);
-        userWord.setUser(this);
-    }
+//    public void addLearningWord(UserWord userWord) {
+//        learningWords.add(userWord);
+//        userWord.setUser(this);
+//    }
 }

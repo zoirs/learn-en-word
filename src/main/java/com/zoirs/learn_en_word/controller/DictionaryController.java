@@ -21,8 +21,8 @@ public class DictionaryController {
 
     @GetMapping("/search")
     @Operation(summary = "Search for words in the dictionary")
-    public ResponseEntity<List<Word>> searchWords(@RequestParam String query) {
-        List<Word> words = dictionaryCacheService.searchWords(query);
+    public ResponseEntity<List<Meaning>> searchWords(@RequestParam String query) {
+        List<Meaning> words = dictionaryCacheService.searchWords(query);
         return ResponseEntity.ok(words);
     }
 

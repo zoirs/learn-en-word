@@ -16,10 +16,10 @@ import java.util.List;
 @Setter
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "meaningCache")
 public class MeaningEntity extends BaseEntity {
-    
+
     @Column(name = "external_id", unique = true)
     private Integer externalId;
-    
+
     @Column(name = "word_id")
     private Integer wordId;
     
@@ -40,7 +40,7 @@ public class MeaningEntity extends BaseEntity {
     
     @OneToOne(mappedBy = "meaning", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private TranslationEntity translationEntity;
-    
+
     @OneToMany(mappedBy = "meaning", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<ImageEntity> imageEntities = new ArrayList<>();
@@ -52,57 +52,50 @@ public class MeaningEntity extends BaseEntity {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<ExampleEntity> exampleEntities = new ArrayList<>();
     
-    @JsonBackReference
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "word_entity_id")
-    private WordEntity word;
-
-    public MeaningEntity(Long id) {
-        super(id);
-    }
-
-    public MeaningEntity() {
-    }
+//    @JsonBackReference
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "word_entity_id")
+//    private WordEntity word;
 
     public void setTranslation(TranslationEntity translationEntity) {
         if (translationEntity == null) {
-            if (this.translationEntity != null) {
-                this.translationEntity.setMeaning(null);
-            }
+//            if (this.translationEntity != null) {
+//                this.translationEntity.setMeaning(null);
+//            }
         } else {
-            translationEntity.setMeaning(this);
+//            translationEntity.setMeaning(this);
         }
         this.translationEntity = translationEntity;
     }
     
     public void setDefinition(DefinitionEntity definitionEntity) {
-        if (definitionEntity == null) {
-            if (this.definitionEntity != null) {
-                this.definitionEntity.setMeaning(null);
-            }
-        } else {
-            definitionEntity.setMeaning(this);
-        }
+//        if (definitionEntity == null) {
+//            if (this.definitionEntity != null) {
+//                this.definitionEntity.setMeaning(null);
+//            }
+//        } else {
+//            definitionEntity.setMeaning(this);
+//        }
         this.definitionEntity = definitionEntity;
     }
     
     public void addImage(ImageEntity imageEntity) {
         imageEntities.add(imageEntity);
-        imageEntity.setMeaning(this);
+//        imageEntity.setMeaning(this);
     }
     
     public void removeImage(ImageEntity imageEntity) {
         imageEntities.remove(imageEntity);
-        imageEntity.setMeaning(null);
+//        imageEntity.setMeaning(null);
     }
     
     public void addExample(ExampleEntity exampleEntity) {
         exampleEntities.add(exampleEntity);
-        exampleEntity.setMeaning(this);
+//        exampleEntity.setMeaning(this);
     }
     
     public void removeExample(ExampleEntity exampleEntity) {
         exampleEntities.remove(exampleEntity);
-        exampleEntity.setMeaning(null);
+//        exampleEntity.setMeaning(null);
     }
 }
