@@ -1,11 +1,6 @@
 package com.zoirs.learn_en_word.mapper;
 
-import com.zoirs.learn_en_word.api.dto.skyeng.Word;
-import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
-import com.zoirs.learn_en_word.api.dto.skyeng.Translation;
-import com.zoirs.learn_en_word.api.dto.skyeng.Image;
-import com.zoirs.learn_en_word.api.dto.skyeng.Definition;
-import com.zoirs.learn_en_word.api.dto.skyeng.Example;
+import com.zoirs.learn_en_word.api.dto.skyeng.*;
 import com.zoirs.learn_en_word.model.*;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
@@ -22,7 +17,8 @@ public interface WordMapper {
     
     //@Mapping(target = "word", ignore = true)
     MeaningEntity toEntity(Meaning dto, Integer id);
-    
+    MeaningEntity toEntity(MeaningShort dto, Integer id);
+
     //@Mapping(target = "meaning", ignore = true)
     TranslationEntity toEntity(Translation dto, MeaningEntity id);
     
@@ -39,7 +35,9 @@ public interface WordMapper {
     Word toDto(WordEntity entity);
     
     Meaning toDto(MeaningEntity entity);
-    
+
+
+     MeaningShort toDtoShort(MeaningEntity entity) ;
     Translation toDto(TranslationEntity entity);
     
     Image toDto(ImageEntity entity);

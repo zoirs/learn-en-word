@@ -78,6 +78,19 @@ class ChatGPTServiceSimpleTest {
         // Then
         assertTrue(result.isEmpty(), "Should return empty list for empty input");
     }
+    @Test
+    void suggestNewWords_WithEmptyInput_ReturnsEmptyList1() {
+        // Given
+//        Set<String> emptyList = Set.of();
+//        when(chatGPTClient.generateResponse(any()))
+//                .thenReturn(ResponseEntity.ok(new ChatGPTResponse()));
+
+        // When
+        Set<String> result = chatGPTService.suggestNewWords(Set.of("dog"), Set.of("book", "chair", "like", "apple", "school", "run", "mother"));
+
+        // Then
+        assertTrue(result.isEmpty(), "Should return empty list for empty input");
+    }
 
     @Test
     void suggestNewWords_WhenApiFails_ReturnsEmptyList() {

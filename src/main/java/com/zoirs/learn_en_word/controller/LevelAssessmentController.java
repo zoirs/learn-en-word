@@ -51,9 +51,7 @@ public class LevelAssessmentController {
         List<Meaning> meanings = dictionaryCacheService.searchWords(word);
         if (!meanings.isEmpty()) {
             Meaning meaning = meanings.getFirst();
-            if (meaning.getDifficultyLevel() == null) {
-                meaning.setDifficultyLevel(de);
-            }
+            meaning.setDifficultyLevel(de);
         }
         return meanings;
     }

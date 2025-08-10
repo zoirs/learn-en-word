@@ -1,6 +1,7 @@
 package com.zoirs.learn_en_word.service;
 
 import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
+import com.zoirs.learn_en_word.api.dto.skyeng.MeaningShort;
 import com.zoirs.learn_en_word.api.dto.skyeng.Word;
 import com.zoirs.learn_en_word.api.service.SkyengDictionaryService;
 import com.zoirs.learn_en_word.mapper.WordMapper;
@@ -32,6 +33,11 @@ public class DictionaryCacheService {
     private final MeaningRepository meaningRepository;
     private final WordMapper wordMapper;
 
+    public List<Word> searchWords1(String search) {
+        return skyengDictionaryService.searchWords(search);
+    }
+
+
     @Cacheable(value = "wordSearchCache", key = "#search.toLowerCase()")
 //   //  @Transactional(readOnly = true)
     public List<Meaning> searchWords(String search) {
@@ -59,9 +65,9 @@ public class DictionaryCacheService {
                 }
             }
             if (found.isPresent()) {
-                Optional<Meaning> meaningO = found.get().getMeanings().stream().findFirst();
+                Optional<MeaningShort> meaningO = found.get().getMeanings().stream().findFirst();
                 if (meaningO.isPresent()) {
-                    Meaning meaning = meaningO.get();
+                    MeaningShort meaning = meaningO.get();
                     List<Meaning> meanings = skyengDictionaryService.getMeanings(String.valueOf(meaning.getId()));
                     saveMeaningsToCache(meanings);
                     return meanings;

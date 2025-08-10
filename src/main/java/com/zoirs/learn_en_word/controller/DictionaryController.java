@@ -26,6 +26,13 @@ public class DictionaryController {
         return ResponseEntity.ok(words);
     }
 
+    @GetMapping("/search/words")
+    @Operation(summary = "Search for words in the dictionary")
+    public ResponseEntity<List<Word>> findWords(@RequestParam String query) {
+        List<Word> words = dictionaryCacheService.searchWords1(query);
+        return ResponseEntity.ok(words);
+    }
+
     @GetMapping("/meanings")
     @Operation(summary = "Get meanings by their IDs")
     public ResponseEntity<List<Meaning>> getMeanings(@RequestParam String ids) {

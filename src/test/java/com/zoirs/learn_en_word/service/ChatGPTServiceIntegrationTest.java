@@ -23,8 +23,8 @@ class ChatGPTServiceIntegrationTest {
     @Test
     void suggestNewWords_WithValidInput_ReturnsListOfWords() {
         // Given
-        Set<String> knownWords = Set.of("apple", "book", "car");
-        Set<String> learningWords = Set.of("dog", "elephant", "fruit");
+        Set<String> knownWords = Set.of("dog", "book");
+        Set<String> learningWords = Set.of("water", "like", "school", "run", "mother");
 
         // When
         Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);

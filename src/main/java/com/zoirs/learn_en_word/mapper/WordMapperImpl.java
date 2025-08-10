@@ -93,13 +93,13 @@ public class WordMapperImpl implements WordMapper {
 
         Word word = new Word();
 
-        if ( entity.getId() != null ) {
-            word.setId( entity.getId().intValue() );
+        if ( entity.getExternalId() != null ) {
+            word.setId( entity.getExternalId().intValue() );
         }
         word.setText( entity.getText() );
-        List<Meaning> m=new ArrayList<>();
+        List<MeaningShort> m=new ArrayList<>();
         for (MeaningEntity meaningEntity : entity.getMeaningEntities()) {
-            m.add(toDto(meaningEntity));
+            m.add(toDtoShort(meaningEntity));
         }
         word.setMeanings(m);
 
@@ -114,9 +114,10 @@ public class WordMapperImpl implements WordMapper {
 
         Meaning meaning = new Meaning();
 
-        if ( entity.getId() != null ) {
-            meaning.setId( entity.getId().intValue() );
-        }
+//        if ( entity.getId() != null ) {
+//            meaning.setId( entity.getId().intValue() );
+//        }
+        meaning.setId(entity.getExternalId());
         meaning.setWordId( entity.getWordId() );
         meaning.setDifficultyLevel( entity.getDifficultyLevel() );
         meaning.setPartOfSpeechCode( entity.getPartOfSpeechCode() );
@@ -128,6 +129,33 @@ public class WordMapperImpl implements WordMapper {
             meaning.setUpdatedAt( DateTimeFormatter.ISO_LOCAL_DATE_TIME.format( entity.getUpdatedAt() ) );
         }
         meaning.setMnemonics( entity.getMnemonics() );
+        meaning.setTranslation(toDto(entity.getTranslationEntity()));
+//        meaning.setExamples();// todo добавить
+        return meaning;
+    }
+
+    @Override
+    public MeaningShort toDtoShort(MeaningEntity entity) {
+        if ( entity == null ) {
+            return null;
+        }
+
+        MeaningShort meaning = new MeaningShort();
+
+        if ( entity.getExternalId() != null ) {
+            meaning.setId( entity.getExternalId().intValue() );
+        }
+//        meaning.setWordId( entity.getWordId() );
+//        meaning.setDifficultyLevel( entity.getDifficultyLevel() );
+        meaning.setPartOfSpeechCode( entity.getPartOfSpeechCode() );
+//        meaning.setPrefix( entity.getPrefix() );
+//        meaning.setText( entity.getText() );
+        meaning.setSoundUrl( entity.getSoundUrl() );
+        meaning.setTranscription( entity.getTranscription() );
+        if ( entity.getUpdatedAt() != null ) {
+//            meaning.setUpdatedAt( DateTimeFormatter.ISO_LOCAL_DATE_TIME.format( entity.getUpdatedAt() ) );
+        }
+//        meaning.setMnemonics( entity.getMnemonics() );
         meaning.setTranslation(toDto(entity.getTranslationEntity()));
 
         return meaning;
@@ -247,6 +275,50 @@ public class WordMapperImpl implements WordMapper {
                     .map(dto1 -> toEntity(dto1, meaning))
                     .forEach(meaning::addExample);
         }
+
+        return meaning;
+    }
+
+    @Override
+    public MeaningEntity toEntity(MeaningShort dto, Integer id) {
+        if (dto == null) {
+            return null;
+        }
+
+        MeaningEntity meaning = new MeaningEntity();
+
+        meaning.setExternalId(dto.getId());
+//        meaning.setWordId((dto.getWordId() != null) ? dto.getWordId() : id);
+//        meaning.setDifficultyLevel(dto.getDifficultyLevel());
+        meaning.setPartOfSpeechCode(dto.getPartOfSpeechCode());
+//        meaning.setPrefix(dto.getPrefix());
+//        meaning.setText(dto.getText());
+        meaning.setSoundUrl(dto.getSoundUrl());
+        meaning.setTranscription(dto.getTranscription());
+//        meaning.setMnemonics(dto.getMnemonics());
+
+        if (dto.getTranslation() != null) {
+            TranslationEntity translation = toEntity(dto.getTranslation(), meaning);
+            meaning.setTranslation(translation);
+        }
+
+//        if (dto.getImages() != null) {
+//            for (Image dto1 : dto.getImages()) {
+//                ImageEntity entity = toEntity(dto1, meaning);
+//                meaning.addImage(entity);
+//            }
+//        }
+
+//        if (dto.getDefinition() != null) {
+//            DefinitionEntity definition = toEntity(dto.getDefinition(), meaning);
+//            meaning.setDefinition(definition);
+//        }
+
+//        if (dto.getExamples() != null) {
+//            dto.getExamples().stream()
+//                    .map(dto1 -> toEntity(dto1, meaning))
+//                    .forEach(meaning::addExample);
+//        }
 
         return meaning;
     }

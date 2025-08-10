@@ -54,7 +54,7 @@ public class ChatGPTService {
                 !response.getBody().getChoices().isEmpty()) {
                 
                 String content = response.getBody().getChoices().get(0).getMessage().getContent();
-                return  Set.of(content.split("\\s*,\\s*"));
+                return  new HashSet<>(Arrays.asList(content.split("\\s*,\\s*")));
             }
             return Collections.emptySet();
             

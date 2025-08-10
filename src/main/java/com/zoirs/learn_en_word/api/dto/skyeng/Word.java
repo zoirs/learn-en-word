@@ -12,5 +12,5 @@ import java.util.List;
 public class Word {
     private Integer id;
     private String text;
-    private List<Meaning> meanings;
+    private List<MeaningShort> meanings;
 }
