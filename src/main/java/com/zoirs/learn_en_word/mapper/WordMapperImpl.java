@@ -130,7 +130,10 @@ public class WordMapperImpl implements WordMapper {
         }
         meaning.setMnemonics( entity.getMnemonics() );
         meaning.setTranslation(toDto(entity.getTranslationEntity()));
-//        meaning.setExamples();// todo добавить
+        List<ExampleEntity> exampleEntities = entity.getExampleEntities();
+        System.out.println(exampleEntities);
+        List<Example> collect = exampleEntities.stream().map(this::toDto).collect(Collectors.toList());
+        meaning.setExamples(collect);// todo добавить
         return meaning;
     }
 
