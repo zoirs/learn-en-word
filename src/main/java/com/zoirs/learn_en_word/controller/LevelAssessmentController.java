@@ -24,6 +24,7 @@ public class LevelAssessmentController {
     private static final Set<String> b1 = Set.of("advice", "career", "cancel", "customer", "explain", "prefer", "nervous", "borrow", "relationship", "almost");
     private static final Set<String> b2 = Set.of("efficient", "impact", "solution", "concern", "despite", "attempt", "policy", "reduce", "behaviour", "debate");
     private static final Set<String> c1 = Set.of("undermine", "coherent", "ambiguous", "nevertheless", "imply", "justify", "notion", "facilitate", "implement", "furthermore");
+    private static final Set<String> c2 = Set.of("ubiquitous", "ephemeral", "idiosyncratic", "perfunctory", "obfuscate", "magnanimous", "fastidious", "equanimity", "circumspect", "intransigent");
 
     @GetMapping("/initial-words")
     public ResponseEntity<Set<Meaning>> getWordSuggestions() {
@@ -41,6 +42,9 @@ public class LevelAssessmentController {
             result.addAll(getMeanings(word, 3));
         }
         for (String word : c1) {
+            result.addAll(getMeanings(word, 4));
+        }
+        for (String word : c2) {
             result.addAll(getMeanings(word, 4));
         }
 
