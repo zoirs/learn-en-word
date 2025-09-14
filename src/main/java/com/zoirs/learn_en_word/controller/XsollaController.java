@@ -41,13 +41,16 @@ public class XsollaController {
         Map<String, Object> body = Map.of(
                 "user", Map.of(
                         "id", Map.of("value", req.userId),
-                        "email", Map.of("value", req.email)
+                        "email", Map.of("value", req.email),
+                        "country",  Map.of("value", "RU")
                 ),
                 "settings", Map.of(
                         "project_id", Integer.parseInt(projectId),
                         "return_url", req.returnUrl,
                         "mode", req.sandbox ? "sandbox" : "live",
-                        "payment_method", 1380 //банковские карты
+                        "payment_method", 1380, //банковские карты
+                        "currency", "RUB",
+                        "language", "ru"
                 ),
                 "purchase", Map.of(
                         "subscription", Map.of("plan_id", req.planId)
