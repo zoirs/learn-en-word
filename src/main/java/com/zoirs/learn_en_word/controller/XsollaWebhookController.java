@@ -42,7 +42,9 @@ public class XsollaWebhookController {
         // из Project settings > Webhooks
         String computed = org.apache.commons.codec.digest.DigestUtils.sha1Hex(raw + projectSecret);
 
-        if (!computed.equals(signature)) return ResponseEntity.status(401).body("bad signature");
+        if (!computed.equals(signature)) {
+            return ResponseEntity.badRequest().body("{\"error\": {\"code\": \"INVALID_SIGNATURE\",\"message\": \"Invalid signature\"}}");
+        }
 
         JSONObject message = new JSONObject(raw);
         String notificationType = message.getString("notification_type");
