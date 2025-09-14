@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Map;
@@ -43,15 +44,29 @@ public class XsollaWebhookController {
 
         if (!computed.equals(signature)) return ResponseEntity.status(401).body("bad signature");
 
-        Map<String, Object> stringObjectMap = jsonToMap(raw);
-        if ("user_validation".equals(stringObjectMap.get("notification_type"))) {
-            log.info("User validation return 204");
-            return ResponseEntity.status(204).build();
+        JSONObject message = new JSONObject(raw);
+        String notificationType = message.getString("notification_type");
+        switch (notificationType) {
+            case "user_validation":
+                JSONObject user = message.getJSONObject("user");
+                if (user.getString("id").startsWith("test_xsolla")) {
+                    log.info("User validation return 400");
+                    return ResponseEntity.badRequest().body("{\"error\": {\"code\": \"INVALID_USER\",\"message\": \"Invalid user\"}}");
+                } else {
+                    log.info("User validation return 204");
+                    return ResponseEntity.status(204).build();
+                }
+            case "payment":
+                return ResponseEntity.ok("{\"status\": \"Payment processed successfully\"}");
+            case "refund":
+                return ResponseEntity.status(200).build();
+            default:
+                return ResponseEntity.status(200).build();
         }
         // TODO: распарсить raw JSON, проверить type:
         // - "payment" / "updated_subscription" / "cancel_subscription" и т.д.
         // Обновить статус подписки пользователя в вашей БД.
-        return ResponseEntity.ok("OK");
+//        return ResponseEntity.ok("OK");
     }
 
     public Map<String, Object> jsonToMap(String json) throws IOException {
