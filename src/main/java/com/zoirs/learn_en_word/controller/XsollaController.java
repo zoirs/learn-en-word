@@ -68,7 +68,7 @@ public class XsollaController {
 
         // deep link для мобильного приложения
         String redirectUrl = String.format(
-                "comzoirshello_flutter://callback/pay-return?status=%s&invoice_id=%s",
+                "comzoirshelloflutter://callback/pay-return?status=%s&invoice_id=%s",
                 status != null ? status : "unknown",
                 invoiceId != null ? invoiceId : "none"
         );
