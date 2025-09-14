@@ -45,6 +45,7 @@ public class XsollaWebhookController {
 
         Map<String, Object> stringObjectMap = jsonToMap(raw);
         if ("user_validation".equals(stringObjectMap.get("notification_type"))) {
+            log.info("User validation return 204");
             return ResponseEntity.status(204).build();
         }
         // TODO: распарсить raw JSON, проверить type:
