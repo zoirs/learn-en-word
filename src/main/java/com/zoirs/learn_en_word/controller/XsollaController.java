@@ -3,16 +3,11 @@ package com.zoirs.learn_en_word.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.util.Map;
 
 @RestController
@@ -64,6 +59,23 @@ public class XsollaController {
         log.info("Token created: {}", response);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/pay-return")
+    public ResponseEntity<Void> handlePayReturn(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, name = "invoice_id") String invoiceId) {
+
+        // deep link для мобильного приложения
+        String redirectUrl = String.format(
+                "comzoirshello_flutter://callback/pay-return?status=%s&invoice_id=%s",
+                status != null ? status : "unknown",
+                invoiceId != null ? invoiceId : "none"
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(redirectUrl));
+        return new ResponseEntity<>(headers, HttpStatus.FOUND); // 302 Redirect
     }
 
     public static record CreateTokenReq(
