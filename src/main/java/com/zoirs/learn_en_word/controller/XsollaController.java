@@ -46,7 +46,8 @@ public class XsollaController {
                 "settings", Map.of(
                         "project_id", Integer.parseInt(projectId),
                         "return_url", req.returnUrl,
-                        "mode", req.sandbox ? "sandbox" : "live"
+                        "mode", req.sandbox ? "sandbox" : "live",
+                        "payment_method", 1380 //банковские карты
                 ),
                 "purchase", Map.of(
                         "subscription", Map.of("plan_id", req.planId)
