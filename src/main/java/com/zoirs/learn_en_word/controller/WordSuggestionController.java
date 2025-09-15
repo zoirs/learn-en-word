@@ -49,37 +49,37 @@ public class WordSuggestionController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping
-    @Operation(summary = "Get word suggestions",
-              description = "Get a list of suggested words to learn next based on known and currently learning words")
-    public ResponseEntity<Set<UserWordResponse>> getWordSuggestions(@RequestParam Long userId) {
-        List<UserWord> userWords = wordService.getUserWords(userId);
-        Set<String> learning = userWords.stream()
-                .filter(q -> q.getStatus() == UserWord.LearningStatus.LEARNING)
-                .map(q -> q.getWord().getText())
-                .collect(Collectors.toSet());
-        if (learning.size() > 2) {
-            Set<UserWordResponse> result = userWords.stream()
-                    .filter(q -> q.getStatus() == UserWord.LearningStatus.LEARNING)
-                    .map(q -> new UserWordResponse(q, wordMapper.toDto(q.getMeaning())))
-                    .collect(Collectors.toSet());
-            return ResponseEntity.ok(result);
-        }
-        Set<String> mastered = userWords.stream()
-                .filter(q -> q.getStatus() == UserWord.LearningStatus.MASTERED)
-                .map(q -> q.getWord().getText())
-                .collect(Collectors.toSet());
+//    @PostMapping
+//    @Operation(summary = "Get word suggestions",
+//              description = "Get a list of suggested words to learn next based on known and currently learning words")
+//    public ResponseEntity<Set<UserWordResponse>> getWordSuggestions(@RequestParam Long userId) {
+//        List<UserWord> userWords = wordService.getUserWords(userId);
+//        Set<String> learning = userWords.stream()
+//                .filter(q -> q.getStatus() == UserWord.LearningStatus.LEARNING)
+//                .map(q -> q.getWord().getText())
+//                .collect(Collectors.toSet());
+//        if (learning.size() > 2) {
+//            Set<UserWordResponse> result = userWords.stream()
+//                    .filter(q -> q.getStatus() == UserWord.LearningStatus.LEARNING)
+//                    .map(q -> new UserWordResponse(q, wordMapper.toDto(q.getMeaning())))
+//                    .collect(Collectors.toSet());
+//            return ResponseEntity.ok(result);
+//        }
+//        Set<String> mastered = userWords.stream()
+//                .filter(q -> q.getStatus() == UserWord.LearningStatus.MASTERED)
+//                .map(q -> q.getWord().getText())
+//                .collect(Collectors.toSet());
 //        Set<String> suggestions = chatGPTService.suggestNewWords(mastered, learning);
 //        if (suggestions == null || suggestions.isEmpty()) {
 //            return ResponseEntity.noContent().build();
 //        }
-        wordService.ensureEnoughWordsForLearning(userId);
-
-        userWords = wordService.getUserWords(userId);
-        Set<UserWordResponse> result = userWords.stream()
-                .filter(q -> q.getStatus() == UserWord.LearningStatus.LEARNING)
-                .map(q -> new UserWordResponse(q, wordMapper.toDto(q.getMeaning())))
-                .collect(Collectors.toSet());
-        return ResponseEntity.ok(result);
-    }
+//        wordService.ensureEnoughWordsForLearning(userId);
+//
+//        userWords = wordService.getUserWords(userId);
+//        Set<UserWordResponse> result = userWords.stream()
+//                .filter(q -> q.getStatus() == UserWord.LearningStatus.LEARNING)
+//                .map(q -> new UserWordResponse(q, wordMapper.toDto(q.getMeaning())))
+//                .collect(Collectors.toSet());
+//        return ResponseEntity.ok(result);
+//    }
 }

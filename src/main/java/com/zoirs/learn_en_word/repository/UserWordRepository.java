@@ -14,22 +14,22 @@ import java.util.Optional;
 @Repository
 public interface UserWordRepository extends JpaRepository<UserWord, Long> {
     
-    @Query("SELECT uw FROM UserWord uw " +
-           "WHERE uw.user.id = :userId " +
-           "AND uw.status = 'LEARNING' " +
-           "AND uw.nextReviewDate <= :currentDate " +
-           "ORDER BY uw.learningStage, uw.nextReviewDate")
-    List<UserWord> findWordsForReview(@Param("userId") Long userId, 
-                                    @Param("currentDate") LocalDateTime currentDate);
+//    @Query("SELECT uw FROM UserWord uw " +
+//           "WHERE uw.user.id = :userId " +
+//           "AND uw.status = 'LEARNING' " +
+//           "AND uw.nextReviewDate <= :currentDate " +
+//           "ORDER BY uw.learningStage, uw.nextReviewDate")
+//    List<UserWord> findWordsForReview(@Param("userId") Long userId,
+//                                    @Param("currentDate") LocalDateTime currentDate);
     
-    @Query("SELECT COUNT(uw) FROM UserWord uw WHERE uw.user.id = :userId AND uw.status = 'LEARNING'")
-    int countLearningWordsByUserId(@Param("userId") Long userId);
-    
-    boolean existsByUserIdAndWordId(Long userId, Long wordId);
-
-    Optional<UserWord> findByUserIdAndWordId(Long userId, Long wordId);
-
-    List<UserWord> findByUserIdAndStatus(Long userId, UserWord.LearningStatus learningStatus);
-
-    List<UserWord> findByUserId(Long userId);
+//    @Query("SELECT COUNT(uw) FROM UserWord uw WHERE uw.user.id = :userId AND uw.status = 'LEARNING'")
+//    int countLearningWordsByUserId(@Param("userId") Long userId);
+//
+//    boolean existsByUserIdAndWordId(Long userId, Long wordId);
+//
+//    Optional<UserWord> findByUserIdAndWordId(Long userId, Long wordId);
+//
+//    List<UserWord> findByUserIdAndStatus(Long userId, UserWord.LearningStatus learningStatus);
+//
+//    List<UserWord> findByUserId(Long userId);
 }

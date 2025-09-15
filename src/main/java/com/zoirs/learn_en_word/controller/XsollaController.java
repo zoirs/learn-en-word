@@ -1,7 +1,11 @@
 package com.zoirs.learn_en_word.controller;
 
+import com.zoirs.learn_en_word.entity.User;
+import com.zoirs.learn_en_word.req.CreateTokenReq;
+import com.zoirs.learn_en_word.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +28,14 @@ public class XsollaController {
     @Value("${xsolla.XSOLLA_PROJECT_ID}")
     private String projectId;
 
+    @Autowired
+    private UserService userService;
+
     @PostMapping("/token")
     public ResponseEntity<Map<String, Object>> createToken(@RequestBody CreateTokenReq req) {
-        log.info("Creating token for user {}", req.userId);
-        String url = "https://api.xsolla.com/merchant/v2/merchants/" + merchantId + "/token";
+        log.info("Creating token for user {}", req);
+        User user = userService.getOrCreateUser(req.email(), null);
+        String id = user.getId();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -35,25 +43,26 @@ public class XsollaController {
 
         Map<String, Object> body = Map.of(
                 "user", Map.of(
-                        "id", Map.of("value", req.userId),
-                        "email", Map.of("value", req.email),
+                        "id", Map.of("value", id),
+                        "email", Map.of("value", req.email()),
                         "country",  Map.of("value", "RU")
                 ),
                 "settings", Map.of(
                         "project_id", Integer.parseInt(projectId),
-                        "return_url", req.returnUrl,
-                        "mode", req.sandbox ? "sandbox" : "live",
-                        "payment_method", 1380, //банковские карты
+                        "return_url", req.returnUrl(),
+                        "mode", req.sandbox() ? "sandbox" : "live",
+//                        "payment_method", 1380, //банковские карты
                         "currency", "RUB",
                         "language", "ru"
                 ),
                 "purchase", Map.of(
-                        "subscription", Map.of("plan_id", req.planId)
+                        "subscription", Map.of("plan_id", req.planId())
                 )
         );
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
+        String url = "https://api.xsolla.com/merchant/v2/merchants/" + merchantId + "/token";
         Map<String, Object> response =
                 restTemplate.postForObject(url, entity, Map.class);
         log.info("Token created: {}", response);
@@ -77,12 +86,4 @@ public class XsollaController {
         headers.setLocation(URI.create(redirectUrl));
         return new ResponseEntity<>(headers, HttpStatus.FOUND); // 302 Redirect
     }
-
-    public static record CreateTokenReq(
-            String userId,
-            String email,
-            String planId,
-            String returnUrl,
-            boolean sandbox
-    ) {}
 }

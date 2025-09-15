@@ -15,17 +15,21 @@ import java.util.List;
 @AllArgsConstructor
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
     @Column(unique = true, nullable = false)
     private String username;
-    
-//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<UserWord> learningWords = new ArrayList<>();
-    
-//    public void addLearningWord(UserWord userWord) {
-//        learningWords.add(userWord);
-//        userWord.setUser(this);
-//    }
+
+    @Column(unique = true)
+    private String email;
+
+    @Column
+    private SubscriptionPaymentType paymentType;
+
+    @PrePersist
+    public void generateId() {
+        if (id == null) {
+            id = java.util.UUID.randomUUID().toString();
+        }
+    }
 }

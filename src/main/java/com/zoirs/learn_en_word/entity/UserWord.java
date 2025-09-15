@@ -17,9 +17,9 @@ public class UserWord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "user_id", nullable = false)
+//    private User user;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "word_id", nullable = false)
@@ -39,7 +39,7 @@ public class UserWord {
     private int learningStage = 0; // Used for spaced repetition
     
     public UserWord(User user, WordEntity word, MeaningEntity meaning) {
-        this.user = user;
+//        this.user = user;
         this.word = word;
         this.meaning = meaning;
     }

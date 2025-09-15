@@ -2,7 +2,11 @@ package com.zoirs.learn_en_word.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zoirs.learn_en_word.entity.User;
+import com.zoirs.learn_en_word.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Map;
@@ -19,6 +22,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/webhooks/xsolla")
 public class XsollaWebhookController {
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -36,7 +42,7 @@ public class XsollaWebhookController {
                 ? sigHeader.substring(expectedPrefix.length()) : "";
 
         // Получаем raw body как строку без повторной сериализации!
-        String raw = request.getReader().lines().reduce("", (a,b) -> a + b);
+        String raw = request.getReader().lines().reduce("", (a, b) -> a + b);
         log.info("Got: {}", raw);
 
         // из Project settings > Webhooks
@@ -49,17 +55,27 @@ public class XsollaWebhookController {
         JSONObject message = new JSONObject(raw);
         String notificationType = message.getString("notification_type");
         switch (notificationType) {
-            case "user_validation":
+            case "user_validation": {
                 JSONObject user = message.getJSONObject("user");
-                if (user.getString("id").startsWith("test_xsolla")) {
+                String id = user.getString("id");
+                String email = user.getString("email");
+
+                User existUser = userService.get(email, id);
+                if (existUser == null) {
                     log.info("User validation return 400");
                     return ResponseEntity.badRequest().body("{\"error\": {\"code\": \"INVALID_USER\",\"message\": \"Invalid user\"}}");
                 } else {
                     log.info("User validation return 204");
                     return ResponseEntity.status(204).build();
                 }
-            case "payment":
+            }
+            case "payment": {
+                JSONObject user = message.getJSONObject("user");
+                String id = user.getString("id");
+                String email = user.getString("email");
+                userService.getOrCreateUser(email, id);
                 return ResponseEntity.ok("{\"status\": \"Payment processed successfully\"}");
+            }
             case "refund":
                 return ResponseEntity.status(200).build();
             default:
@@ -72,6 +88,7 @@ public class XsollaWebhookController {
     }
 
     public Map<String, Object> jsonToMap(String json) throws IOException {
-        return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+        return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {
+        });
     }
 }
