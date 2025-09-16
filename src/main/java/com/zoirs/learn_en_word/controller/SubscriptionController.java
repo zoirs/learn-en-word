@@ -24,9 +24,9 @@ public class SubscriptionController {
 
     @PostMapping("/check")
     public ResponseEntity<Map<String, String>> check(String email,
-                                                     @RequestParam(required = false) String id) {
-        log.info("Checking subscription for user {}, {}", email, id);
-        User user = userService.get(email, id);
+                                                     @RequestParam(required = false) String userId) {
+        log.info("Checking subscription for user {}, {}", email, userId);
+        User user = userService.get(email, userId);
         String subscription = (user != null && user.getPaymentType() != null) ? user.getPaymentType().name() : SubscriptionPaymentType.NONE.name();
         return ResponseEntity.ok(Map.of("subscribed", subscription));
     }

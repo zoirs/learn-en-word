@@ -34,7 +34,7 @@ public class XsollaController {
     @PostMapping("/token")
     public ResponseEntity<Map<String, Object>> createToken(@RequestBody CreateTokenReq req) {
         log.info("Creating token for user {}", req);
-        User user = userService.getOrCreateUser(req.email(), null);
+        User user = userService.getOrCreateUser(req.email(), req.userId());
         String id = user.getId();
 
         HttpHeaders headers = new HttpHeaders();
