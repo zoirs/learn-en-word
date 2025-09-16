@@ -31,3 +31,4 @@ public class SubscriptionController {
         return ResponseEntity.ok(Map.of("subscribed", subscription));
     }
 }
+

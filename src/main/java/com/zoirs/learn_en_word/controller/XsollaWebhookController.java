@@ -2,6 +2,7 @@ package com.zoirs.learn_en_word.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zoirs.learn_en_word.entity.SubscriptionPaymentType;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,7 +74,7 @@ public class XsollaWebhookController {
                 JSONObject user = message.getJSONObject("user");
                 String id = user.getString("id");
                 String email = user.getString("email");
-                userService.getOrCreateUser(email, id);
+                userService.createOrUpdatePaymentType(email, id, SubscriptionPaymentType.XSOLLA);
                 return ResponseEntity.ok("{\"status\": \"Payment processed successfully\"}");
             }
             case "refund":
