@@ -22,12 +22,18 @@ public class ChatGPTService {
     @Value("${openai.api.model:gpt-3.5-turbo}")
     private String model;
 
-    private static final String SYSTEM_PROMPT = "You are a helpful English language learning assistant. " +
-            "Your task is to suggest new English words for a learner based on the words they already know and are currently learning. " +
-            "Provide the response as a comma-separated list of words only, without any additional text or explanations. " +
-            "Each word should be in its base form (e.g., 'run' instead of 'ran' or 'running'). " +
-            "The words should be relevant to the user's level, which can be inferred from the words they know and are learning. " +
-            "Aim for words that are slightly more advanced than the ones they're currently learning.";
+    private static final String SYSTEM_PROMPT = """
+            You are a helpful English language learning assistant.
+            Your task is to suggest new English words for a learner based on the words they already know and are currently learning.
+            Provide the response as a comma-separated list of words only, without any additional text or explanations.
+            Each word should be in its base form (e.g., 'run' instead of 'ran' or 'running').
+            The words should be relevant to the user's level, which can be inferred from the words they know and are learning.
+            Suggest words in three groups:
+            - 3 words that are slightly easier than the current learning words,
+            - 4 words at approximately the same level as the current learning words,
+            - 3 words that are slightly more advanced.
+            Do not label the groups or add explanations — just output them in a single comma-separated list.
+            """;
 
     public Set<String> suggestNewWords(Set<String> knownWords, Set<String> learningWords) {
         try {
