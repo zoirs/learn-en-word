@@ -13,6 +13,7 @@ public class ChatGPTRequest {
     private String model = "gpt-3.5-turbo";
     private List<Message> messages;
     private double temperature = 0.7;
+    private Object response_format;
 
     @Data
     @NoArgsConstructor
