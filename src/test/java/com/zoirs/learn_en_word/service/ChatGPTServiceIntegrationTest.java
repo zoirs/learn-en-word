@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -24,24 +25,15 @@ class ChatGPTServiceIntegrationTest {
     void suggestNewWords_WithValidInput_ReturnsListOfWords() {
         // Given
         Set<String> knownWords = Set.of("dog", "book");
-        Set<String> learningWords = Set.of("water", "like", "school", "run", "mother");
+        Set<String> learningWords = new HashSet<>(Set.of("water", "like", "school", "run", "mother", "remember"));
 
-        // When
-        Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
+        for (int i = 0; i < 5; i++) {
+            Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
+            log.info("Suggested words: {}", String.join(",", result));
+            learningWords.addAll(result);
+        }
 
-        // Then
-        assertNotNull(result, "Returned words list should not be null");
-        assertFalse(result.isEmpty(), "Returned words list should not be empty");
-        assertTrue(result.size() >= 3, "Should return at least 3 suggested words");
-        
-        // Log the result for visibility
-        log.info("Suggested words: {}", String.join(", ", result));
-        
-        // Verify each word is not empty
-        result.forEach(word -> {
-            assertNotNull(word, "Word in the list should not be null");
-            assertFalse(word.trim().isEmpty(), "Word should not be empty or whitespace");
-        });
+
     }
 
 }

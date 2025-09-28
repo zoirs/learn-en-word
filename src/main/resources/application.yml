@@ -32,6 +32,6 @@ spring:
 logging:
   level:
     root: INFO
-    com.zoirs.learn_en_word: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+#    com.zoirs.learn_en_word: DEBUG
+#    org.hibernate.SQL: DEBUG
+#    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

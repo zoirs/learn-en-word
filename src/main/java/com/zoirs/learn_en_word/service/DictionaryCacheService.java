@@ -17,10 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,15 +54,11 @@ public class DictionaryCacheService {
         // Save to cache for future use
         if (!apiWords.isEmpty()) {
 //            log.debug("Saving {} words to cache for search: {}", apiWords.size(), search);
-            Optional<Word> found = Optional.empty();
-            for (Word apiWord : apiWords) {
-                if (search.equals(apiWord.getText())) {
-                    found = Optional.of(apiWord);
-                    break;
-                }
-            }
-            if (found.isPresent()) {
-                Optional<MeaningShort> meaningO = found.get().getMeanings().stream().findFirst();
+            List<Word> matchedWords = apiWords.stream()
+                    .filter(apiWord -> search.equals(apiWord.getText()))
+                    .toList();
+            if (!matchedWords.isEmpty()) {
+                Optional<MeaningShort> meaningO = matchedWords.getFirst().getMeanings().stream().findFirst();
                 if (meaningO.isPresent()) {
                     MeaningShort meaning = meaningO.get();
                     List<Meaning> meanings = skyengDictionaryService.getMeanings(String.valueOf(meaning.getId()));
@@ -187,15 +180,7 @@ public class DictionaryCacheService {
                     // Check if meaning already exists
                     Optional<MeaningEntity> existingMeaning = 
                             meaningRepository.findByExternalId(meaning.getId());
-                    if (existingMeaning.isPresent()) {
-                        // Update existing meaning
-                        MeaningEntity meaningToUpdate = existingMeaning.get();
-//                        wordMapper.updateMeaningFromDto(
-//                                wordMapper.toDto(meaning),
-//                                meaningToUpdate
-//                        );
-//                        meaningRepository.save(meaningToUpdate);
-                    } else {
+                    if (existingMeaning.isEmpty()) {
                         // Save new meaning
                         MeaningEntity entity = wordMapper.toEntity(meaning, null);
                         meaningRepository.save(entity);

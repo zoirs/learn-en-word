@@ -29,4 +29,7 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Long> {
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     boolean existsByExternalId(Integer externalId);
+    
+    @Query("SELECT MAX(m.externalId) FROM MeaningEntity m WHERE m.autoloaded = true")
+    Optional<Long> findMaxExternalIdByAutoloadedTrue();
 }

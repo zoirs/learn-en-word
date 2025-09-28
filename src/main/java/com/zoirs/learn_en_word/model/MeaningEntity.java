@@ -51,11 +51,8 @@ public class MeaningEntity extends BaseEntity {
     @OneToMany(mappedBy = "meaning", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<ExampleEntity> exampleEntities = new ArrayList<>();
-    
-//    @JsonBackReference
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "word_entity_id")
-//    private WordEntity word;
+
+    private Boolean autoloaded;
 
     public void setTranslation(TranslationEntity translationEntity) {
         if (translationEntity == null) {
