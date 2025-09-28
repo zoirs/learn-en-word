@@ -45,13 +45,18 @@ public class Autoloader {
         String ids = sequence(maxId, 10);
 
         log.info("Try load {}", ids);
-        List<Meaning> meanings = skyengDictionaryService.getMeanings(ids);
-        if (meanings.isEmpty()) {
-            log.info("No new meanings found {}", ids);
+        try {
+            List<Meaning> meanings = skyengDictionaryService.getMeanings(ids);
+            if (meanings.isEmpty()) {
+                log.info("No new meanings found {}", ids);
+                stopWorking = true;
+                return;
+            }
+            saveMeaningsToCache(meanings);
+        }catch (Exception e) {
+            log.error("Error loading meanings", e);
             stopWorking = true;
-            return;
         }
-        saveMeaningsToCache(meanings);
     }
 
     public static String sequence(long start, int count) {
