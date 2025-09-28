@@ -30,7 +30,7 @@ public class Autoloader {
 
     boolean stopWorking = false;
 
-    @Scheduled(fixedRate = 60_000) // 60000 milliseconds = 1 minute
+    @Scheduled(fixedDelay = 60_000) // 60000 milliseconds = 1 minute
     public void runEveryMinute() {
         if (stopWorking) {
             return;

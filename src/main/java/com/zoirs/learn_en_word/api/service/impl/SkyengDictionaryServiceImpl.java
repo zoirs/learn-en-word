@@ -3,6 +3,8 @@ package com.zoirs.learn_en_word.api.service.impl;
 import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
 import com.zoirs.learn_en_word.api.dto.skyeng.Word;
 import com.zoirs.learn_en_word.api.service.SkyengDictionaryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -17,6 +19,7 @@ import java.util.List;
 
 @Service
 public class SkyengDictionaryServiceImpl implements SkyengDictionaryService {
+    private static final Logger log = LoggerFactory.getLogger(SkyengDictionaryServiceImpl.class);
 
     private static final String SEARCH_ENDPOINT = "/api/public/v1/words/search";
     private static final String MEANINGS_ENDPOINT = "/api/public/v1/meanings";
@@ -64,11 +67,13 @@ public class SkyengDictionaryServiceImpl implements SkyengDictionaryService {
                     url,
                     HttpMethod.GET,
                     null,
-                    new ParameterizedTypeReference<>() {}
+                    new ParameterizedTypeReference<>() {
+                    }
             );
 
             return response.getBody() != null ? response.getBody() : Collections.emptyList();
         } catch (Exception e) {
+            log.error("Error loading meanings", e);
             // Log the error and return empty list
             return Collections.emptyList();
         }
