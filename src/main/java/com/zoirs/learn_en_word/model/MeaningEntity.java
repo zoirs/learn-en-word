@@ -32,7 +32,7 @@ public class MeaningEntity extends BaseEntity {
     private String prefix;
     private String text;
     
-    @Column(name = "sound_url")
+    @Column(name = "sound_url", length = 2048)
     private String soundUrl;
     
     private String transcription;

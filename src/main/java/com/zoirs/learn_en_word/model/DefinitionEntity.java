@@ -17,7 +17,7 @@ public class DefinitionEntity extends BaseEntity {
     @Column(length = 2000)
     private String text;
 
-    @Column(name = "sound_url", length = 1024)
+    @Column(name = "sound_url", length = 2048)
     private String soundUrl;
     
     @JsonBackReference

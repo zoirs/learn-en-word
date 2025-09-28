@@ -10,10 +10,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ExampleEntity extends BaseEntity {
-    
+
+    @Column(name = "text", length = 2048)
     private String text;
     
-    @Column(name = "sound_url")
+    @Column(name = "sound_url", length = 2048)
     private String soundUrl;
     
     @JsonBackReference
