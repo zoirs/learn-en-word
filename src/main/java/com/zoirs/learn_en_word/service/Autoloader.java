@@ -42,7 +42,7 @@ public class Autoloader {
         } else {
             maxId = 0;
         }
-        String ids = sequence(maxId, 10);
+        String ids = sequence(maxId, 20);
 
         log.info("Try load {}", ids);
         try {
