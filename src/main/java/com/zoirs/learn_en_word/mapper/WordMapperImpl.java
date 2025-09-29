@@ -4,17 +4,22 @@ import com.zoirs.learn_en_word.api.dto.skyeng.*;
 import com.zoirs.learn_en_word.model.*;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.MappingTarget;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
 //@Mapper(componentModel = "spring")
 public class WordMapperImpl implements WordMapper {
 
+
+    private static final Logger log = LoggerFactory.getLogger(WordMapperImpl.class);
 
     @Override
     public TranslationEntity toEntity(Translation dto, MeaningEntity id) {
@@ -259,6 +264,22 @@ public class WordMapperImpl implements WordMapper {
         if (dto.getTranslation() != null) {
             TranslationEntity translation = toEntity(dto.getTranslation(), meaning);
             meaning.setTranslation(translation);
+
+            List<MeaningWithSimilarTranslation> meaningsWithSimilarTranslation = dto.getMeaningsWithSimilarTranslation();
+            if (meaningsWithSimilarTranslation != null && translation.getText() != null) {
+                meaningsWithSimilarTranslation.stream()
+                        .filter(q -> dto.getId().equals(q.getMeaningId()))
+                        .map(MeaningWithSimilarTranslation::getFrequencyPercent)
+                        .findFirst()
+                        .ifPresent(s -> {
+                            try {
+                                int percent = (int) Double.parseDouble(s);
+                                meaning.setFrequencyPercent(percent);
+                            } catch (Exception e) {
+                                log.error("Cant parse FrequencyPercent " + s, e);
+                            }
+                        });
+            }
         }
 
         if (dto.getImages() != null) {
