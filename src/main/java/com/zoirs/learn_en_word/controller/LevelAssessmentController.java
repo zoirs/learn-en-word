@@ -8,9 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/level-assessment")
@@ -52,12 +50,14 @@ public class LevelAssessmentController {
     }
 
     private List<Meaning> getMeanings(String word, int de) {
-        List<Meaning> meanings = dictionaryCacheService.searchWords(word);
-        if (!meanings.isEmpty()) {
-            Meaning meaning = meanings.getFirst();
+        Optional<Meaning> meaningO = dictionaryCacheService.searchWords(word).stream()
+                .min(Comparator.comparing(Meaning::getId));
+        if (meaningO.isPresent()) {
+            Meaning meaning = meaningO.get();
             meaning.setDifficultyLevel(de);
+            return List.of(meaning);
         }
-        return meanings;
+        return Collections.emptyList();
     }
 
 }

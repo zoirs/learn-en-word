@@ -30,7 +30,9 @@ public class Autoloader {
 
     boolean stopWorking = false;
 
-    @Scheduled(fixedDelay = 60_000) // 60000 milliseconds = 1 minute
+    int errors = 0;
+
+    @Scheduled(fixedDelay = 30_000) // 60000 milliseconds = 1 minute
     public void runEveryMinute() {
         if (stopWorking) {
             return;
@@ -53,9 +55,11 @@ public class Autoloader {
                 return;
             }
             saveMeaningsToCache(meanings);
+            errors = 0;
         }catch (Exception e) {
-            log.error("Error loading meanings", e);
-            stopWorking = true;
+            errors++;
+            log.error("Error loading meanings " + errors, e);
+            sleep(errors * 120_000);
         }
     }
 
@@ -91,5 +95,13 @@ public class Autoloader {
                         meaningRepository.save(entity);
                     }
                 });
+    }
+
+    private static void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ex) {
+
+        }
     }
 }
