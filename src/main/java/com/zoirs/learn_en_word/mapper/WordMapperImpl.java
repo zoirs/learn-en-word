@@ -267,10 +267,12 @@ public class WordMapperImpl implements WordMapper {
 
             List<MeaningWithSimilarTranslation> meaningsWithSimilarTranslation = dto.getMeaningsWithSimilarTranslation();
             if (meaningsWithSimilarTranslation != null && translation.getText() != null) {
-                meaningsWithSimilarTranslation.stream()
+                Optional<MeaningWithSimilarTranslation> exist = meaningsWithSimilarTranslation.stream()
                         .filter(q -> dto.getId().equals(q.getMeaningId()))
+                        .findFirst();
+                meaning.setIsValid(exist.isPresent());
+                exist
                         .map(MeaningWithSimilarTranslation::getFrequencyPercent)
-                        .findFirst()
                         .ifPresent(s -> {
                             try {
                                 int percent = (int) Double.parseDouble(s);

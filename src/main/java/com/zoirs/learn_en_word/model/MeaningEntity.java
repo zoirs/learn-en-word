@@ -38,6 +38,7 @@ public class MeaningEntity extends BaseEntity {
     private String transcription;
     private String mnemonics;
     private Integer frequencyPercent;
+    private Boolean isValid;
 
     @OneToOne(mappedBy = "meaning", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private TranslationEntity translationEntity;
