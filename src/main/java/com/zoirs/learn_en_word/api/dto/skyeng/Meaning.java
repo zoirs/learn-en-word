@@ -35,4 +35,8 @@ public class Meaning {
     private List<MeaningWithSimilarTranslation> meaningsWithSimilarTranslation;
     @JsonProperty("alternativeTranslations")
     private List<AlternativeTranslation> alternativeTranslations;
+
+    //этого поля нет в скайенг
+    //todo отделить модель скайенг от дто
+    private Integer frequencyPercent;
 }

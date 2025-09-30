@@ -4,6 +4,7 @@ import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
 import com.zoirs.learn_en_word.service.DictionaryCacheService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,14 +51,29 @@ public class LevelAssessmentController {
     }
 
     private List<Meaning> getMeanings(String word, int de) {
-        Optional<Meaning> meaningO = dictionaryCacheService.searchWords(word).stream()
-                .min(Comparator.comparing(Meaning::getId));
-        if (meaningO.isPresent()) {
-            Meaning meaning = meaningO.get();
-            meaning.setDifficultyLevel(de);
-            return List.of(meaning);
+        List<Meaning> meanings = dictionaryCacheService.searchWords(word);
+        if (CollectionUtils.isEmpty(meanings)) {
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
+        Meaning best = null;
+        for (Meaning m : meanings) {
+            if (!CollectionUtils.isEmpty(m.getMeaningsWithSimilarTranslation())) {
+                boolean isActual = m.getMeaningsWithSimilarTranslation().stream()
+                        .anyMatch(s -> s.getMeaningId().equals(m.getId()));
+
+                if (isActual) {
+                    m.setDifficultyLevel(de);
+                    return List.of(m);
+                }
+            }
+
+            // если актуальную ещё не нашли, то выбираем с минимальным id
+            if (best == null || m.getId() < best.getId()) {
+                best = m;
+            }
+        }
+        best.setDifficultyLevel(de);
+        return List.of(best);
     }
 
 }

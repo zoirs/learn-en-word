@@ -2,6 +2,7 @@ package com.zoirs.learn_en_word.service;
 
 import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
 import com.zoirs.learn_en_word.api.dto.skyeng.MeaningShort;
+import com.zoirs.learn_en_word.api.dto.skyeng.MeaningWithSimilarTranslation;
 import com.zoirs.learn_en_word.api.dto.skyeng.Word;
 import com.zoirs.learn_en_word.api.service.SkyengDictionaryService;
 import com.zoirs.learn_en_word.mapper.WordMapper;
@@ -63,6 +64,23 @@ public class DictionaryCacheService {
                     MeaningShort meaning = meaningO.get();
                     List<Meaning> meanings = skyengDictionaryService.getMeanings(String.valueOf(meaning.getId()));
                     saveMeaningsToCache(meanings);
+                    for (Meaning m : meanings) {
+                        if (m.getMeaningsWithSimilarTranslation() == null) {
+                            continue;
+                        }
+                        m.getMeaningsWithSimilarTranslation().stream()
+                                .filter(q -> m.getId().equals(q.getMeaningId()))
+                                .map(MeaningWithSimilarTranslation::getFrequencyPercent)
+                                .findFirst()
+                                .ifPresent(s -> {
+                                    try {
+                                        int percent = (int) Double.parseDouble(s);
+                                        m.setFrequencyPercent(percent);
+                                    } catch (Exception e) {
+                                        log.error("Cant parse FrequencyPercent " + s, e);
+                                    }
+                                });
+                    }
                     return meanings;
                 }
             }
