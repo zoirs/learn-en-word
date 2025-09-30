@@ -51,7 +51,8 @@ public class Autoloader {
             List<Meaning> meanings = skyengDictionaryService.getMeanings(ids);
             if (meanings.isEmpty()) {
                 log.info("No new meanings found {}", ids);
-                stopWorking = true;
+                errors++;
+                sleep(errors * 120_000);
                 return;
             }
             saveMeaningsToCache(meanings);
