@@ -44,7 +44,9 @@ public class WordSuggestionController {
         Set<Meaning> result = new HashSet<>();
         for (String suggestion : suggestions) {
             List<Meaning> words = dictionaryCacheService.searchWords(suggestion);
-            result.addAll(words);
+            if (!words.isEmpty()) {
+                result.add(words.getFirst());
+            }
         }
         return ResponseEntity.ok(result);
     }
