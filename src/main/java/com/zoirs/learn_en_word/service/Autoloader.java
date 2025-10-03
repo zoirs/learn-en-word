@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class Autoloader {
@@ -31,6 +32,7 @@ public class Autoloader {
     boolean stopWorking = false;
 
     int errors = 0;
+    int count = 20;
 
     @Scheduled(fixedDelay = 20_000) // 60000 milliseconds = 1 minute
     public void runEveryMinute() {
@@ -44,7 +46,7 @@ public class Autoloader {
         } else {
             maxId = 0;
         }
-        String ids = sequence(maxId, 20);
+        String ids = sequence(maxId, count);
 
         log.info("Try load {}", ids);
         try {
@@ -55,7 +57,12 @@ public class Autoloader {
                 sleep(errors * 120_000);
                 return;
             }
-            saveMeaningsToCache(meanings);
+            boolean isSaved = saveMeaningsToCache(meanings);
+            if (!isSaved) {
+                count = count + 10;
+            } else {
+                count = 20;
+            }
             errors = 0;
         }catch (Exception e) {
             errors++;
@@ -75,13 +82,13 @@ public class Autoloader {
         return sb.toString();
     }
 
-    public void saveMeaningsToCache(List<Meaning> meanings) {
+    public boolean saveMeaningsToCache(List<Meaning> meanings) {
         if (meanings == null || meanings.isEmpty()) {
-            return;
+            return false;
         }
 
         log.debug("Saving {} meanings to database cache", meanings.size());
-
+        AtomicBoolean isSaved = new AtomicBoolean(false);
         meanings.stream()
                 .filter(Objects::nonNull)
                 .forEach(meaning -> {
@@ -94,8 +101,10 @@ public class Autoloader {
                         MeaningEntity entity = wordMapper.toEntity(meaning, null);
                         entity.setAutoloaded(true);
                         meaningRepository.save(entity);
+                        isSaved.set(true);
                     }
                 });
+        return isSaved.get();
     }
 
     private static void sleep(int millis) {
