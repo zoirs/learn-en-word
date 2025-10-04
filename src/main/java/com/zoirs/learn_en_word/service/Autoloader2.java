@@ -42,7 +42,7 @@ public class Autoloader2 {
 
     @Scheduled(fixedDelay = 20_000) // 60000 milliseconds = 1 minute
     public void runEveryMinute() {
-        if (offset < 270000L) {
+        if (offset > 270000L) {
             return;
         }
         List<Long> result = getMissingIds();
