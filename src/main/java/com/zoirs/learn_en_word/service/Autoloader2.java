@@ -11,15 +11,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 @Service
-public class Autoloader {
+public class Autoloader2 {
 
-    private static final Logger log = LoggerFactory.getLogger(Autoloader.class);
+    private static final Logger log = LoggerFactory.getLogger(Autoloader2.class);
     @Autowired
     private SkyengDictionaryService skyengDictionaryService;
 
@@ -29,35 +31,30 @@ public class Autoloader {
     @Autowired
     private MeaningRepository meaningRepository;
 
-    boolean stopWorking = true;
+    boolean stopWorking = false;
 
     int errors = 0;
     int count = 20;
 
+    int limit = 20;
+    int offset = 0;
+
+
     @Scheduled(fixedDelay = 20_000) // 60000 milliseconds = 1 minute
     public void runEveryMinute() {
-        if (stopWorking) {
+        if (offset < 270000L) {
             return;
         }
-        Optional<Long> maxIdO = meaningRepository.findMaxExternalIdByAutoloadedTrue();
-        long maxId;
-        if (maxIdO.isPresent()) {
-            maxId = maxIdO.get();
-            if (maxId < 268545L) {
-                maxId = 268545L;
-            }
-        } else {
-            maxId = 0;
-        }
-        String ids = sequence(maxId, count);
+        List<Long> result = getMissingIds();
+
+        String ids = result.stream().map(String::valueOf)
+                .collect(Collectors.joining(","));
 
         log.info("Try load {}", ids);
         try {
             List<Meaning> meanings = skyengDictionaryService.getMeanings(ids);
             if (meanings.isEmpty()) {
                 log.info("No new meanings found {}", ids);
-                errors++;
-                sleep(errors * 120_000);
                 return;
             }
             boolean isSaved = saveMeaningsToCache(meanings);
@@ -67,11 +64,21 @@ public class Autoloader {
                 count = 20;
             }
             errors = 0;
-        }catch (Exception e) {
+        } catch (Exception e) {
             errors++;
             log.error("Error loading meanings " + errors, e);
             sleep(errors * 120_000);
         }
+    }
+
+    private List<Long> getMissingIds() {
+        List<Long> result = new ArrayList<>();
+        while (result.isEmpty()) {
+            log.info("Try get missing ids from {} {}", offset, limit);
+            result = meaningRepository.findMissingIds(offset, offset + limit);
+            offset += limit;
+        }
+        return result;
     }
 
     public static String sequence(long start, int count) {
