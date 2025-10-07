@@ -67,8 +67,7 @@ public class LevelAssessmentController {
                 }
             }
 
-            // если актуальную ещё не нашли, то выбираем с минимальным id
-            if (best == null || m.getId() < best.getId()) {
+            if (best == null || m.getFrequencyPercent() > best.getFrequencyPercent()) {
                 best = m;
             }
         }

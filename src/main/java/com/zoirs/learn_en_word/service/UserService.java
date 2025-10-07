@@ -65,6 +65,7 @@ public class UserService {
         if (!StringUtils.isEmpty(id)) {
             newUser.setId(id);
         }
+        newUser.setUsername(email);
         newUser.setPaymentType(paymentType);
         return userRepository.save(newUser);
 

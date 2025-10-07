@@ -37,10 +37,10 @@ public class Autoloader2 {
     int count = 20;
 
     int limit = 20;
-    int offset = 0;
+    int offset = 106560;
 
 
-    @Scheduled(fixedDelay = 20_000) // 60000 milliseconds = 1 minute
+//    @Scheduled(fixedDelay = 20_000) // 60000 milliseconds = 1 minute
     public void runEveryMinute() {
         if (offset > 270000L) {
             return;
