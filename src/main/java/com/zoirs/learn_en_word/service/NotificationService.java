@@ -41,8 +41,7 @@ public class NotificationService {
         log.info("Notification sent: {}", response);
     }
 
-//    @Scheduled(cron = "0 0 * * * *") // каждый час
-    @Scheduled(fixedDelay = 60_000) // каждый час
+    @Scheduled(cron = "0 0 10-22 * * *")
     public void sendHourlyQuizzes() {
         List<User> users = userRepository.findAll();
         for (User user : users) {

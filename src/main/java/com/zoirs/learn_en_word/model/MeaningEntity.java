@@ -11,7 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "meanings")
+@Table(
+        name = "meanings",
+        indexes = {
+                @Index(name = "idx_meanings_text", columnList = "text")
+        }
+)
 @Getter
 @Setter
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "meaningCache")
