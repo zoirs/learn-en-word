@@ -9,6 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
 @Slf4j
 @Service
 public class UserService {
@@ -18,9 +22,15 @@ public class UserService {
 
     @Transactional
     public User getOrCreateUser(String email, String id) {
-        User user = userRepository.findByEmail(email);
-        if (user != null) {
-            return user;
+        if (StringUtils.isNotEmpty(email)) {
+            User user = userRepository.findByEmail(email);
+            if (user != null) {
+                return user;
+            }
+        }
+        Optional<User> userO = userRepository.findById(id);
+        if (userO.isPresent()) {
+            return userO.get();
         }
         User newUser = new User();
         if (!StringUtils.isEmpty(id)) {
@@ -69,5 +79,47 @@ public class UserService {
         newUser.setPaymentType(paymentType);
         return userRepository.save(newUser);
 
+    }
+
+    public void initUser(String id, String fireBaseToken, String timezone) {
+        Optional<User> userO = userRepository.findById(id);
+        if (userO.isPresent()) {
+            User user = userO.get();
+            log.info("User {} updated firebase token and timezone", id);
+            boolean isNeedSave = false;
+            if (StringUtils.isNotEmpty(fireBaseToken) && !fireBaseToken.equals(user.getFirebaseToken())) {
+                user.setFirebaseToken(fireBaseToken);
+                isNeedSave = true;
+            }
+            if (StringUtils.isNotEmpty(timezone) && !timezone.equals(user.getTimezone())) {
+                user.setTimezone(timezone);
+                isNeedSave = true;
+            }
+            if (isNeedSave) {
+                userRepository.save(user);
+            }
+        } else {
+            User newUser = new User();
+            newUser.setId(id);
+            newUser.setUsername(id);
+            newUser.setFirebaseToken(fireBaseToken);
+            userRepository.save(newUser);
+        }
+    }
+
+    private static boolean isNeedUpdate(String fireBaseToken, String timezone, User user) {
+        return StringUtils.isNotEmpty(fireBaseToken) && !fireBaseToken.equals(user.getFirebaseToken())
+                || StringUtils.isNotEmpty(timezone) && !timezone.equals(user.getTimezone());
+    }
+
+    public void updateUserWords(String userId, Set<Integer> knownWords, Set<Integer> learningWords, Set<Integer> newWords) {
+        Optional<User> userO = userRepository.findById(userId);
+        if (userO.isPresent()) {
+            User user = userO.get();
+            user.setKnownWords(new HashSet<>(knownWords));
+            user.setLearningWords(new HashSet<>(learningWords));
+            user.setNewWords(new HashSet<>(newWords));
+            userRepository.save(user);
+        }
     }
 }

@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MeaningRepository extends JpaRepository<MeaningEntity, Long> {
+public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer> {
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     Optional<MeaningEntity> findByExternalId(Integer externalId);

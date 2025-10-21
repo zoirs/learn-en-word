@@ -31,8 +31,6 @@ public class Autoloader2 {
     @Autowired
     private MeaningRepository meaningRepository;
 
-    boolean stopWorking = false;
-
     int errors = 0;
     int count = 20;
 

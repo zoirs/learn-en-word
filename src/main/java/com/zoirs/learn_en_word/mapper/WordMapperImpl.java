@@ -141,6 +141,7 @@ public class WordMapperImpl implements WordMapper {
         meaning.setFrequencyPercent(entity.getFrequencyPercent());
         return meaning;
     }
+    // удалил  in (12697,12698,12699,12700)
 
     @Override
     public MeaningShort toDtoShort(MeaningEntity entity) {

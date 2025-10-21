@@ -7,6 +7,7 @@ import com.zoirs.learn_en_word.mapper.WordMapper;
 import com.zoirs.learn_en_word.req.UserWordResponse;
 import com.zoirs.learn_en_word.service.ChatGPTService;
 import com.zoirs.learn_en_word.service.DictionaryCacheService;
+import com.zoirs.learn_en_word.service.UserService;
 import com.zoirs.learn_en_word.service.WordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 public class WordSuggestionController {
 
     private final ChatGPTService chatGPTService;
-    private final WordService wordService;
+    private final UserService userService;
     private final WordMapper wordMapper;
     private final DictionaryCacheService dictionaryCacheService;
 
@@ -48,6 +49,9 @@ public class WordSuggestionController {
                 result.add(words.getFirst());
             }
         }
+        Set<Integer> newWords = result.stream().map(Meaning::getId).collect(Collectors.toSet());
+        //todo значения вместо пустых списков
+        userService.updateUserWords(state.getUserId(), Set.of(), Set.of(), newWords);
         return ResponseEntity.ok(result);
     }
 

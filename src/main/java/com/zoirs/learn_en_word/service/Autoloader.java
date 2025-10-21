@@ -34,7 +34,7 @@ public class Autoloader {
     int errors = 0;
     int count = 20;
 
-    @Scheduled(fixedDelay = 20_000) // 60000 milliseconds = 1 minute
+//    @Scheduled(fixedDelay = 20_000) // 60000 milliseconds = 1 minute
     public void runEveryMinute() {
         if (stopWorking) {
             return;
