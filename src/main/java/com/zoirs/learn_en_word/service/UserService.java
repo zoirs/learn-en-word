@@ -115,6 +115,7 @@ public class UserService {
     public void updateUserWords(String userId, Set<Integer> knownWords, Set<Integer> learningWords, Set<Integer> newWords) {
         Optional<User> userO = userRepository.findById(userId);
         if (userO.isPresent()) {
+            log.info("User id present");
             User user = userO.get();
             user.setKnownWords(new HashSet<>(knownWords));
             user.setLearningWords(new HashSet<>(learningWords));

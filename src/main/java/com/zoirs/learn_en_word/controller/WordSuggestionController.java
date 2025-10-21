@@ -12,6 +12,8 @@ import com.zoirs.learn_en_word.service.WordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Word Suggestion", description = "API for getting word suggestions based on user's vocabulary")
 public class WordSuggestionController {
 
+    private static final Logger log = LoggerFactory.getLogger(WordSuggestionController.class);
     private final ChatGPTService chatGPTService;
     private final UserService userService;
     private final WordMapper wordMapper;
@@ -51,6 +54,7 @@ public class WordSuggestionController {
         }
         Set<Integer> newWords = result.stream().map(Meaning::getId).collect(Collectors.toSet());
         //todo значения вместо пустых списков
+        log.info("New words for userId {}: {}",state.getUserId(), newWords);
         userService.updateUserWords(state.getUserId(), Set.of(), Set.of(), newWords);
         return ResponseEntity.ok(result);
     }
