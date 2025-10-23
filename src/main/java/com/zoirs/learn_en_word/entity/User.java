@@ -30,7 +30,7 @@ public class User {
 
     private String firebaseToken;
 
-    private String timezone;
+    private Integer timezoneOffset;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "integer[]")

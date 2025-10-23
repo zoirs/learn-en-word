@@ -23,7 +23,7 @@ public class InitController {
     @PostMapping("/init")
     public ResponseEntity<Boolean> createToken(@RequestBody InitSessionReq req) {
         log.info("Init user {}", req);
-        userService.initUser(req.userId(), req.fireBaseToken(), req.timezone());
+        userService.initUser(req.userId(), req.fireBaseToken(), req.timezoneOffset());
         return ResponseEntity.ok(true);
     }
 

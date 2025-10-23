@@ -81,7 +81,7 @@ public class UserService {
 
     }
 
-    public void initUser(String id, String fireBaseToken, String timezone) {
+    public void initUser(String id, String fireBaseToken, Integer timezoneOffset) {
         Optional<User> userO = userRepository.findById(id);
         if (userO.isPresent()) {
             User user = userO.get();
@@ -91,8 +91,8 @@ public class UserService {
                 user.setFirebaseToken(fireBaseToken);
                 isNeedSave = true;
             }
-            if (StringUtils.isNotEmpty(timezone) && !timezone.equals(user.getTimezone())) {
-                user.setTimezone(timezone);
+            if (timezoneOffset != null && !timezoneOffset.equals(user.getTimezoneOffset())) {
+                user.setTimezoneOffset(timezoneOffset);
                 isNeedSave = true;
             }
             if (isNeedSave) {
@@ -105,11 +105,6 @@ public class UserService {
             newUser.setFirebaseToken(fireBaseToken);
             userRepository.save(newUser);
         }
-    }
-
-    private static boolean isNeedUpdate(String fireBaseToken, String timezone, User user) {
-        return StringUtils.isNotEmpty(fireBaseToken) && !fireBaseToken.equals(user.getFirebaseToken())
-                || StringUtils.isNotEmpty(timezone) && !timezone.equals(user.getTimezone());
     }
 
     public void updateUserWords(String userId, Set<Integer> knownWords, Set<Integer> learningWords, Set<Integer> newWords) {
