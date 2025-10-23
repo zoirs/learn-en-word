@@ -4,6 +4,8 @@ import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
 import com.zoirs.learn_en_word.api.dto.skyeng.Word;
 import com.zoirs.learn_en_word.entity.UserWord;
 import com.zoirs.learn_en_word.mapper.WordMapper;
+import com.zoirs.learn_en_word.model.MeaningEntity;
+import com.zoirs.learn_en_word.repository.MeaningRepository;
 import com.zoirs.learn_en_word.req.UserWordResponse;
 import com.zoirs.learn_en_word.service.ChatGPTService;
 import com.zoirs.learn_en_word.service.DictionaryCacheService;
@@ -17,10 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,6 +33,7 @@ public class WordSuggestionController {
     private final UserService userService;
     private final WordMapper wordMapper;
     private final DictionaryCacheService dictionaryCacheService;
+    private final MeaningRepository meaningRepository;
 
     @PostMapping("/post")
     @Operation(summary = "Get word suggestions",
@@ -41,7 +41,13 @@ public class WordSuggestionController {
     public ResponseEntity<Set<Meaning>> getWordSuggestions(
             @RequestBody State state
     ) {
-        Set<String> suggestions = chatGPTService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
+        List<Integer> ids = new ArrayList<>();
+        ids.addAll(state.getKnownWords());
+        ids.addAll(state.getLearningWords());
+        List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
+        Set<String> knownWords = meanings.stream().filter(q->state.getKnownWords().contains(q.getExternalId())).map(MeaningEntity::getText).collect(Collectors.toSet());
+        Set<String> learningWords = meanings.stream().filter(q->state.getLearningWords().contains(q.getExternalId())).map(MeaningEntity::getText).collect(Collectors.toSet());
+        Set<String> suggestions = chatGPTService.suggestNewWords(knownWords, learningWords);
         if (suggestions == null || suggestions.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
@@ -55,7 +61,7 @@ public class WordSuggestionController {
         Set<Integer> newWords = result.stream().map(Meaning::getId).collect(Collectors.toSet());
         //todo значения вместо пустых списков
         log.info("New words for userId {}: {}",state.getUserId(), newWords);
-        userService.updateUserWords(state.getUserId(), Set.of(), Set.of(), newWords);
+        userService.updateUserWords(state.getUserId(), state.getKnownWords(), state.getLearningWords(), newWords);
         return ResponseEntity.ok(result);
     }
 

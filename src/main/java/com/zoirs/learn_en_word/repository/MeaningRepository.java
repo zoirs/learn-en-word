@@ -32,7 +32,7 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
     @Query("SELECT m FROM MeaningEntity m WHERE m.externalId IN :externalIds")
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
 //    @EntityGraph(attributePaths = "exampleEntities")
-    List<MeaningEntity> findByExternalIdIn(List<String> externalIds);
+    List<MeaningEntity> findByExternalIdIn(List<Integer> externalIds);
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     boolean existsByExternalId(Integer externalId);

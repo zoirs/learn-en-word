@@ -8,6 +8,6 @@ import java.util.Set;
 @Data
 public class State {
     private String userId;
-    private Set<String> knownWords;
-    private Set<String> learningWords;
+    private Set<Integer> knownWords;
+    private Set<Integer> learningWords;
 }
