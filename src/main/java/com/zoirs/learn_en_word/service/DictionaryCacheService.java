@@ -94,17 +94,19 @@ public class DictionaryCacheService {
         log.debug("Getting meanings from cache or API for IDs: {}", ids);
 
         // Split the comma-separated IDs
-        List<String> idList = List.of(ids.split(","));
+        List<Integer> numbers = Arrays.stream(ids.split(","))
+                .map(String::trim)
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
 
         // First try to find in local database
-        List<MeaningEntity> cachedMeanings = meaningRepository.findByExternalIdIn(idList);
-        List<String> foundIds = cachedMeanings.stream()
+        List<MeaningEntity> cachedMeanings = meaningRepository.findByExternalIdIn(numbers);
+        List<Integer> foundIds = cachedMeanings.stream()
                 .map(MeaningEntity::getExternalId)
-                .map(String::valueOf)
                 .toList();
 
         // Check if all requested IDs were found in cache
-        List<String> missingIds = idList.stream()
+        List<Integer> missingIds = numbers.stream()
                 .filter(id -> !foundIds.contains(id))
                 .collect(Collectors.toList());
 
@@ -117,8 +119,10 @@ public class DictionaryCacheService {
         log.debug("Found {} meanings in cache, missing {}. Calling Skyeng API...", 
                 cachedMeanings.size(), missingIds.size());
 
-        String missingIdsParam = String.join(",", missingIds);
-        List<Meaning> apiMeanings = 
+        String missingIdsParam = missingIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+        List<Meaning> apiMeanings =
                 skyengDictionaryService.getMeanings(missingIdsParam);
 
         // Save the new meanings to cache
