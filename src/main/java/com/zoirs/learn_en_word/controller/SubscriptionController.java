@@ -22,6 +22,7 @@ public class SubscriptionController {
     @Autowired
     private UserService userService;
 
+    // используется
     @PostMapping("/check")
     public ResponseEntity<Map<String, String>> check(String email,
                                                      @RequestParam(required = false) String userId) {

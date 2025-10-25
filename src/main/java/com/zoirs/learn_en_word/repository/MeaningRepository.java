@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import jakarta.persistence.QueryHint;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer> {
@@ -28,6 +29,19 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
        ORDER BY m.frequencyPercent DESC
        """)
     List<MeaningEntity> findByText(String text);
+
+    @Query("""
+       SELECT m
+       FROM MeaningEntity m
+       WHERE m.text IN :texts
+         AND m.frequencyPercent IS NOT NULL
+         AND m.frequencyPercent = (
+             SELECT MAX(m2.frequencyPercent)
+             FROM MeaningEntity m2
+             WHERE m2.text = m.text
+         )
+       """)
+    List<MeaningEntity> findByTextIn(Set<String> texts);
 
     @Query("SELECT m FROM MeaningEntity m WHERE m.externalId IN :externalIds")
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))

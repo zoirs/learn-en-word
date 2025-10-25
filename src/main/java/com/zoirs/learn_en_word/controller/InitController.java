@@ -20,6 +20,7 @@ public class InitController {
     @Autowired
     private UserService userService;
 
+    //используется
     @PostMapping("/init")
     public ResponseEntity<Boolean> createToken(@RequestBody InitSessionReq req) {
         log.info("Init user {}", req);
@@ -27,6 +28,7 @@ public class InitController {
         return ResponseEntity.ok(true);
     }
 
+    //используется
     @GetMapping("/test")
     public ResponseEntity<Boolean> test() {
         log.info("test notify");

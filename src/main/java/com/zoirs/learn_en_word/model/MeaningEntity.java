@@ -14,7 +14,8 @@ import java.util.List;
 @Table(
         name = "meanings",
         indexes = {
-                @Index(name = "idx_meanings_text", columnList = "text")
+                @Index(name = "idx_meanings_text", columnList = "text"),
+                @Index(name = "idx_meanings_external_id", columnList = "external_id")
         }
 )
 @Getter

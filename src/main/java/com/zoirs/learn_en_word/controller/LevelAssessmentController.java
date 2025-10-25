@@ -3,19 +3,22 @@ package com.zoirs.learn_en_word.controller;
 import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
 import com.zoirs.learn_en_word.service.DictionaryCacheService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/level-assessment")
 @RequiredArgsConstructor
 public class LevelAssessmentController {
 
+    private static final Logger log = LoggerFactory.getLogger(LevelAssessmentController.class);
     private final DictionaryCacheService dictionaryCacheService;
 
     private static final Set<String> a1 = Set.of("dog", "water", "book", "chair", "like", "apple", "school", "house", "run", "mother");
@@ -25,54 +28,11 @@ public class LevelAssessmentController {
     private static final Set<String> c1 = Set.of("undermine", "coherent", "ambiguous", "nevertheless", "imply", "justify", "notion", "facilitate", "implement", "furthermore");
     private static final Set<String> c2 = Set.of("ubiquitous", "ephemeral", "idiosyncratic", "perfunctory", "obfuscate", "magnanimous", "fastidious", "equanimity", "circumspect", "intransigent");
 
+    //используется
     @GetMapping("/initial-words")
-    public ResponseEntity<Set<Meaning>> getWordSuggestions() {
-        HashSet<Meaning> result = new HashSet<>();
-        for (String word : a1) {
-            result.addAll(getMeanings(word, 0));
-        }
-        for (String word : a2) {
-            result.addAll(getMeanings(word, 1));
-        }
-        for (String word : b1) {
-            result.addAll(getMeanings(word, 2));
-        }
-        for (String word : b2) {
-            result.addAll(getMeanings(word, 3));
-        }
-        for (String word : c1) {
-            result.addAll(getMeanings(word, 4));
-        }
-        for (String word : c2) {
-            result.addAll(getMeanings(word, 4));
-        }
-
-        return ResponseEntity.ok(result);
+    public ResponseEntity<List<Meaning>> getWordSuggestions() {
+        List<Integer> ids = List.of(181891, 62337, 202759, 144646, 24452, 158980, 122630, 134538, 27657, 159881, 96141, 30610, 162704, 1938, 104853, 218132, 66333, 151198, 227998, 191137, 184993, 77223, 196389, 233641, 134057, 87724, 188460, 185522, 31920, 112178, 13109, 236469, 183618, 5825, 61001, 207434, 138447, 81871, 19918, 194381, 45009, 55378, 16726, 103001, 226138, 40794, 192984, 146399, 151773, 87011, 36834, 190309, 187115, 32873, 145645, 156016, 175732, 36603, 113022, 71806);
+        List<Meaning> meanings = dictionaryCacheService.getMeanings(ids);
+        return ResponseEntity.ok(meanings);
     }
-
-    private List<Meaning> getMeanings(String word, int de) {
-        List<Meaning> meanings = dictionaryCacheService.searchWords(word);
-        if (CollectionUtils.isEmpty(meanings)) {
-            return Collections.emptyList();
-        }
-        Meaning best = null;
-        for (Meaning m : meanings) {
-            if (!CollectionUtils.isEmpty(m.getMeaningsWithSimilarTranslation())) {
-                boolean isActual = m.getMeaningsWithSimilarTranslation().stream()
-                        .anyMatch(s -> s.getMeaningId().equals(m.getId()));
-
-                if (isActual) {
-                    m.setDifficultyLevel(de);
-                    return List.of(m);
-                }
-            }
-
-            if (best == null || m.getFrequencyPercent() > best.getFrequencyPercent()) {
-                best = m;
-            }
-        }
-        best.setDifficultyLevel(de);
-        return List.of(best);
-    }
-
 }

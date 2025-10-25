@@ -19,13 +19,7 @@ public class DictionaryController {
 
     private final DictionaryCacheService dictionaryCacheService;
 
-    @GetMapping("/search")
-    @Operation(summary = "Search for words in the dictionary")
-    public ResponseEntity<List<Meaning>> searchWords(@RequestParam String query) {
-        List<Meaning> words = dictionaryCacheService.searchWords(query);
-        return ResponseEntity.ok(words);
-    }
-
+    //используется
     @GetMapping("/search/words")
     @Operation(summary = "Search for words in the dictionary")
     public ResponseEntity<List<Word>> findWords(@RequestParam String query) {
@@ -33,17 +27,11 @@ public class DictionaryController {
         return ResponseEntity.ok(words);
     }
 
+    // используется
     @GetMapping("/meanings")
     @Operation(summary = "Get meanings by their IDs")
     public ResponseEntity<List<Meaning>> getMeanings(@RequestParam String ids) {
         List<Meaning> meanings = dictionaryCacheService.getMeanings(ids);
         return ResponseEntity.ok(meanings);
-    }
-
-    @PostMapping("/cache/clear")
-    @Operation(summary = "Clear all caches")
-    public ResponseEntity<Void> clearCache() {
-        dictionaryCacheService.clearAllCaches();
-        return ResponseEntity.ok().build();
     }
 }

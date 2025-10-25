@@ -16,17 +16,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest(classes = TestApplicationRunner.class)
 @ActiveProfiles("test")
 @Transactional
 class WordServiceIntegrationTest {
 
-    @Autowired
-    private WordService wordService;
 
     @Autowired
     private UserRepository userRepository;
