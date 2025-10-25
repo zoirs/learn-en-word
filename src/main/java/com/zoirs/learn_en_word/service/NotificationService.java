@@ -1,10 +1,12 @@
 package com.zoirs.learn_en_word.service;
 
+import com.google.common.base.MoreObjects;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.model.MeaningEntity;
+import com.zoirs.learn_en_word.model.TranslationEntity;
 import com.zoirs.learn_en_word.repository.MeaningRepository;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
@@ -51,12 +53,16 @@ public class NotificationService {
             Optional<Integer> idO = user.getNewWords().stream()
                     .skip(new Random().nextInt(user.getNewWords().size()))
                     .findFirst();
-            Optional<MeaningEntity> meaningO = meaningRepository.findById(idO.get());
+            Optional<MeaningEntity> meaningO = meaningRepository.findByExternalId(idO.get());
             if (meaningO.isEmpty()) {
                 continue;
             }
+            log.info("Sending notification to user: {} {}", user.getId(), user.getUsername());
             try {
-                sendNotification(user.getFirebaseToken(), "Помнишь слово \"" + meaningO.get().getText() + "\"?", "Переводится \"" + meaningO.get().getTranslationEntity().getText() + "\"");
+                TranslationEntity translation = meaningO.get().getTranslationEntity();
+                String title = "Как переводится \"" + meaningO.get().getText() + "\"?";
+                String body = "Переводится \"" + translation.getText() + "\"" + (translation.getNote() != null ? "(" + translation.getNote() + ")" : "");
+                sendNotification(user.getFirebaseToken(), title, body);
             } catch (Exception e) {
                 log.error("Error sending notification to user: {}", user.getId(), e);
             }
