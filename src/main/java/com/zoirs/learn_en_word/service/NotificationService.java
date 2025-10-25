@@ -17,9 +17,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class NotificationService {
@@ -50,18 +52,28 @@ public class NotificationService {
             if (StringUtils.isEmpty(user.getFirebaseToken()) || CollectionUtils.isEmpty(user.getNewWords())) {
                 continue;
             }
-            Optional<Integer> idO = user.getNewWords().stream()
+            List<Integer> ids = new ArrayList<>();
+            List<Integer> c1 = user.getNewWords().stream()
                     .skip(new Random().nextInt(user.getNewWords().size()))
-                    .findFirst();
-            Optional<MeaningEntity> meaningO = meaningRepository.findByExternalId(idO.get());
-            if (meaningO.isEmpty()) {
+                    .limit(2)
+                    .toList();
+            List<Integer> c2 = user.getLearningWords().stream()
+                    .skip(new Random().nextInt(user.getLearningWords().size()))
+                    .limit(1)
+                    .toList();
+            ids.addAll(c1);
+            ids.addAll(c2);
+            List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
+            if (meanings.isEmpty()) {
                 continue;
             }
             log.info("Sending notification to user: {} {}", user.getId(), user.getUsername());
             try {
-                TranslationEntity translation = meaningO.get().getTranslationEntity();
-                String title = "Как переводится \"" + meaningO.get().getText() + "\"?";
-                String body = "Переводится \"" + translation.getText() + "\"" + (translation.getNote() != null ? "(" + translation.getNote() + ")" : "");
+                String body = meanings.stream().map(m -> {
+                    TranslationEntity translation = m.getTranslationEntity();
+                    return StringUtils.capitalize(m.getText()) + " - " + translation.getText();
+                }).collect(Collectors.joining("\n"));
+                String title = "Время повторить слова";
                 sendNotification(user.getFirebaseToken(), title, body);
             } catch (Exception e) {
                 log.error("Error sending notification to user: {}", user.getId(), e);
