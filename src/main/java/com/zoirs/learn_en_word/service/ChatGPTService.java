@@ -55,9 +55,9 @@ public class ChatGPTService {
             Each word should be in its base form (e.g., 'run' instead of 'ran' or 'running').
             The words should be relevant to the user's level, which can be inferred from the words they know and are learning.
             Suggest words in three groups:
-            - 3 words that are slightly easier than the current learning words,
-            - 4 words at approximately the same level as the current learning words,
-            - 3 words that are slightly more advanced.
+            - 2 words that are slightly easier than the current learning words,
+            - 3 words at approximately the same level as the current learning words,
+            - 4 words that are slightly more advanced.
             """;
 
     public Set<String> suggestNewWords(Set<String> knownWords, Set<String> learningWords) {
