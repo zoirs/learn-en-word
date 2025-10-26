@@ -53,15 +53,15 @@ public class NotificationService {
                 continue;
             }
             List<Integer> ids = new ArrayList<>();
-            List<Integer> c1 = user.getNewWords().stream()
-                    .skip(new Random().nextInt(user.getNewWords().size()))
-                    .limit(2)
-                    .toList();
+//            List<Integer> c1 = user.getNewWords().stream()
+//                    .skip(new Random().nextInt(user.getNewWords().size()))
+//                    .limit(2)
+//                    .toList();
             List<Integer> c2 = user.getLearningWords().stream()
                     .skip(new Random().nextInt(user.getLearningWords().size()))
                     .limit(1)
                     .toList();
-            ids.addAll(c1);
+//            ids.addAll(c1);
             ids.addAll(c2);
             List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
             if (meanings.isEmpty()) {
