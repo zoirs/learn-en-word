@@ -5,6 +5,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import com.zoirs.learn_en_word.entity.User;
+import com.zoirs.learn_en_word.model.ExampleEntity;
 import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.model.TranslationEntity;
 import com.zoirs.learn_en_word.repository.MeaningRepository;
@@ -71,7 +72,14 @@ public class NotificationService {
             try {
                 String body = meanings.stream().map(m -> {
                     TranslationEntity translation = m.getTranslationEntity();
-                    return StringUtils.capitalize(m.getText()) + " - " + translation.getText();
+                    String wordTranslation = StringUtils.capitalize(m.getText()) + " - " + translation.getText();
+                    Optional<ExampleEntity> exampleO = m.getExampleEntities().stream()
+                            .skip(new Random().nextInt(user.getLearningWords().size()))
+                            .findFirst();
+                    if (exampleO.isPresent() && StringUtils.isNotEmpty(exampleO.get().getText())) {
+                        wordTranslation += "\nПример в предложении:\n" + exampleO.get().getText();
+                    }
+                    return wordTranslation;
                 }).collect(Collectors.joining("\n"));
                 String title = "Время повторить слова";
                 sendNotification(user.getFirebaseToken(), title, body);
