@@ -77,7 +77,7 @@ public class NotificationService {
                             .skip(new Random().nextInt(m.getExampleEntities().size()))
                             .findFirst();
                     if (exampleO.isPresent() && StringUtils.isNotEmpty(exampleO.get().getText())) {
-                        wordTranslation += "\n\n" + exampleO.get().getText();
+                        wordTranslation += "\n⬇️\n" + exampleO.get().getText();
                     }
                     return wordTranslation;
                 }).collect(Collectors.joining("\n"));
