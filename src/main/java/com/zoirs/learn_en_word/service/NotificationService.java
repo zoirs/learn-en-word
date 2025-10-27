@@ -74,7 +74,7 @@ public class NotificationService {
                     TranslationEntity translation = m.getTranslationEntity();
                     String wordTranslation = StringUtils.capitalize(m.getText()) + " - " + translation.getText();
                     Optional<ExampleEntity> exampleO = m.getExampleEntities().stream()
-                            .skip(new Random().nextInt(user.getLearningWords().size()))
+                            .skip(new Random().nextInt(m.getExampleEntities().size()))
                             .findFirst();
                     if (exampleO.isPresent() && StringUtils.isNotEmpty(exampleO.get().getText())) {
                         wordTranslation += "\nПример в предложении:\n" + exampleO.get().getText();
