@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ public class NotificationService {
     }
 
     @Scheduled(cron = "0 0 10-22 * * *")
+    @Transactional
     public void sendHourlyQuizzes() {
         List<User> users = userRepository.findAll();
         for (User user : users) {
