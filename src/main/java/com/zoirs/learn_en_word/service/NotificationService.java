@@ -73,9 +73,10 @@ public class NotificationService {
                 String body = meanings.stream().map(m -> {
                     TranslationEntity translation = m.getTranslationEntity();
                     String wordTranslation = StringUtils.capitalize(m.getText()) + " - " + translation.getText();
-                    Optional<ExampleEntity> exampleO = m.getExampleEntities().stream()
-                            .skip(new Random().nextInt(m.getExampleEntities().size()))
-                            .findFirst();
+                    List<ExampleEntity> exampleEntities = m.getExampleEntities();
+                    Optional<ExampleEntity> exampleO = exampleEntities.isEmpty()
+                            ? Optional.empty()
+                            : Optional.of(exampleEntities.get(new Random().nextInt(exampleEntities.size())));
                     if (exampleO.isPresent() && StringUtils.isNotEmpty(exampleO.get().getText())) {
                         wordTranslation += "\n⬇️\n" + exampleO.get().getText();
                     }
