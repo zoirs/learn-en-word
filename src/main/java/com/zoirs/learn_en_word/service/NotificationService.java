@@ -69,7 +69,7 @@ public class NotificationService {
                     TranslationEntity translation = m.getTranslationEntity();
                     StringBuilder wordTranslation = new StringBuilder();
                     if (StringUtils.isNotEmpty(m.getPrefix())) {
-                        wordTranslation.append(StringUtils.capitalize(m.getPrefix()))
+                        wordTranslation.append(m.getPrefix())
                                 .append(" ")
                                 .append(m.getText());
                     } else {
