@@ -21,7 +21,7 @@ public class ChatGPTService {
     private final ChatGPTClient chatGPTClient;
 
 //    @Value("${openai.api.model:gpt-4o-mini}")
-    private static final String model = "gpt-4o-mini";
+    private static final String model = "gpt-4.1";
 
     Map<String, Object> schema = Map.of(
             "type", "object",
@@ -29,20 +29,20 @@ public class ChatGPTService {
                     "easier", Map.of(
                             "type", "array",
                             "items", Map.of("type", "string"),
-                            "minItems", 3,
-                            "maxItems", 3
+                            "minItems", 2,
+                            "maxItems", 2
                     ),
                     "same", Map.of(
                             "type", "array",
                             "items", Map.of("type", "string"),
-                            "minItems", 4,
-                            "maxItems", 4
+                            "minItems", 3,
+                            "maxItems", 3
                     ),
                     "harder", Map.of(
                             "type", "array",
                             "items", Map.of("type", "string"),
-                            "minItems", 3,
-                            "maxItems", 3
+                            "minItems", 4,
+                            "maxItems", 4
                     )
             ),
             "required", List.of("easier", "same", "harder"),
@@ -50,14 +50,16 @@ public class ChatGPTService {
     );
     private static final String SYSTEM_PROMPT = """
             You are a helpful English language learning assistant.
-            Your task is to suggest new English words for a learner based on the words they already know and are currently learning.
-            Provide the response as a comma-separated list of words only, without any additional text or explanations.
-            Each word should be in its base form (e.g., 'run' instead of 'ran' or 'running').
-            The words should be relevant to the user's level, which can be inferred from the words they know and are learning.
-            Suggest words in three groups:
+            Your task is to suggest new English words for a learner based on the words they already know and the words they are currently learning.
+            Each word must follow these rules:
+            1. Avoid rare, academic words.
+            2. Avoid synonyms and near-synonyms of each other and of the user’s known/learning words.
+            3. Suggest words in three groups:
             - 2 words that are slightly easier than the current learning words,
             - 3 words at approximately the same level as the current learning words,
             - 4 words that are slightly more advanced.
+            4. Each group must contain at least two different parts of speech: nouns, verbs, adjectives.
+            5. You must not output groups that contain only verbs
             """;
 
     public Set<String> suggestNewWords(Set<String> knownWords, Set<String> learningWords) {

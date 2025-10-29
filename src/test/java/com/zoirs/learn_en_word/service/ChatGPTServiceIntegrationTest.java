@@ -24,12 +24,13 @@ class ChatGPTServiceIntegrationTest {
     @Test
     void suggestNewWords_WithValidInput_ReturnsListOfWords() {
         // Given
-        Set<String> knownWords = Set.of("dog", "book");
-        Set<String> learningWords = new HashSet<>(Set.of("water", "like", "school", "run", "mother", "remember"));
+        Set<String> knownWords = Set.of( "explain", "cancel", "clarify", "career", "prefer", "almost", "coherent", "tell", "run", "simple", "attempt", "concern", "debate", "mother", "solution", "substantiate", "school", "justify", "create", "implement", "plan", "reduce", "imply", "like", "impact", "water", "airport", "stop", "job", "support", "dog", "facilitate", "maybe", "paradigm", "advice", "book", "house", "holiday", "yesterday", "hungry", "apple", "notion", "define", "relationship", "policy", "undermine", "homework", "efficient", "chair", "argue", "message", "clean", "despite", "integrate", "help", "furthermore", "nervous", "borrow", "behaviour", "invite", "customer");
+//        Set<String> knownWords = Set.of( "advice", "career", "cancel", "customer", "explain", "prefer", "nervous", "borrow", "relationship", "almost","efficient", "impact", "solution", "concern", "despite", "attempt", "policy", "reduce", "behaviour", "debate");
+        Set<String> learningWords = new HashSet<>(Set.of("contemplate", "elucidate", "synthesize", "imply", "justify", "notion", "facilitate"));
 
         for (int i = 0; i < 5; i++) {
             Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
-            log.info("Suggested words: {}", String.join(",", result));
+//            log.info("Suggested words: {}", String.join(",", result));
             learningWords.addAll(result);
         }
 

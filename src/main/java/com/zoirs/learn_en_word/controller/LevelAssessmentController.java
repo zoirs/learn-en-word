@@ -21,7 +21,7 @@ public class LevelAssessmentController {
     private static final Logger log = LoggerFactory.getLogger(LevelAssessmentController.class);
     private final DictionaryCacheService dictionaryCacheService;
 
-    private static final Set<String> a1 = Set.of("dog", "water", "book", "chair", "like", "apple", "school", "house", "run", "mother");
+    private static final Set<String> a1 = Set.of("dog", "water", "book", "chair", "pen", "apple", "school", "house", "run", "mother");
     private static final Set<String> a2 = Set.of("airport", "invite", "maybe", "homework", "job", "hungry", "holiday", "yesterday", "clean", "message");
     private static final Set<String> b1 = Set.of("advice", "career", "cancel", "customer", "explain", "prefer", "nervous", "borrow", "relationship", "almost");
     private static final Set<String> b2 = Set.of("efficient", "impact", "solution", "concern", "despite", "attempt", "policy", "reduce", "behaviour", "debate");

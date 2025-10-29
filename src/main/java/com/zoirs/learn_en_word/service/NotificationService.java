@@ -55,17 +55,10 @@ public class NotificationService {
             if (StringUtils.isEmpty(user.getFirebaseToken()) || CollectionUtils.isEmpty(user.getNewWords())) {
                 continue;
             }
-            List<Integer> ids = new ArrayList<>();
-//            List<Integer> c1 = user.getNewWords().stream()
-//                    .skip(new Random().nextInt(user.getNewWords().size()))
-//                    .limit(2)
-//                    .toList();
-            List<Integer> c2 = user.getLearningWords().stream()
+            List<Integer> ids = user.getLearningWords().stream()
                     .skip(new Random().nextInt(user.getLearningWords().size()))
-                    .limit(1)
+                    .limit(new Random().nextInt(2) + 1)
                     .toList();
-//            ids.addAll(c1);
-            ids.addAll(c2);
             List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
             if (meanings.isEmpty()) {
                 continue;
@@ -74,17 +67,19 @@ public class NotificationService {
             try {
                 String body = meanings.stream().map(m -> {
                     TranslationEntity translation = m.getTranslationEntity();
-                    String wordTranslation = StringUtils.capitalize(m.getText()) + " - " + translation.getText();
-                    List<ExampleEntity> exampleEntities = m.getExampleEntities();
-                    Optional<ExampleEntity> exampleO = exampleEntities.isEmpty()
-                            ? Optional.empty()
-                            : Optional.of(exampleEntities.get(new Random().nextInt(exampleEntities.size())));
-                    if (exampleO.isPresent() && StringUtils.isNotEmpty(exampleO.get().getText())) {
-                        wordTranslation += "\n⬇️\n" + exampleO.get().getText();
+                    StringBuilder wordTranslation = new StringBuilder();
+                    if (StringUtils.isNotEmpty(m.getPrefix())) {
+                        wordTranslation.append(StringUtils.capitalize(m.getPrefix()))
+                                .append(" ")
+                                .append(m.getText());
+                    } else {
+                        wordTranslation.append(StringUtils.capitalize(m.getText()));
                     }
-                    return wordTranslation;
+                    wordTranslation.append(" - ").append(translation.getText());
+                    return wordTranslation.toString();
                 }).collect(Collectors.joining("\n"));
                 String title = "Время повторить слова";
+
                 sendNotification(user.getFirebaseToken(), title, body);
             } catch (Exception e) {
                 log.error("Error sending notification to user: {}", user.getId(), e);
