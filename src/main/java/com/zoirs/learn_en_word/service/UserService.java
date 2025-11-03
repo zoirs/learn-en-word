@@ -81,7 +81,7 @@ public class UserService {
 
     }
 
-    public void initUser(String id, String fireBaseToken, Integer timezoneOffset) {
+    public void initUser(String id, String fireBaseToken, Integer timezoneOffset, int dailyNotifications) {
         Optional<User> userO = userRepository.findById(id);
         if (userO.isPresent()) {
             User user = userO.get();
@@ -95,6 +95,10 @@ public class UserService {
                 user.setTimezoneOffset(timezoneOffset);
                 isNeedSave = true;
             }
+            if (dailyNotifications != user.getDailyNotifications()) {
+                user.setDailyNotifications(dailyNotifications);
+                isNeedSave = true;
+            }
             if (isNeedSave) {
                 userRepository.save(user);
             }
@@ -103,6 +107,7 @@ public class UserService {
             newUser.setId(id);
             newUser.setUsername(id);
             newUser.setFirebaseToken(fireBaseToken);
+            newUser.setDailyNotifications(dailyNotifications);
             userRepository.save(newUser);
         }
     }
