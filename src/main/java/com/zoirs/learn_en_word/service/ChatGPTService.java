@@ -55,11 +55,10 @@ public class ChatGPTService {
             1. Avoid rare, academic words.
             2. Avoid synonyms and near-synonyms of each other and of the user’s known/learning words.
             3. Suggest words in three groups:
-            - 2 words that are slightly easier than the current learning words,
+            - 3 words that are slightly easier than the current learning words,
             - 3 words at approximately the same level as the current learning words,
-            - 4 words that are slightly more advanced.
-            4. Each group must contain at least two different parts of speech: nouns, verbs, adjectives.
-            5. You must not output groups that contain only verbs
+            - 3 words that are slightly more advanced.
+            4. Each group must contain 1 noun, 1 verb, 1 adverb or adjective.
             """;
 
     public Set<String> suggestNewWords(Set<String> knownWords, Set<String> learningWords) {
