@@ -82,7 +82,11 @@ public class NotificationService {
 
                 sendNotification(user.getFirebaseToken(), title, body);
             } catch (Exception e) {
-                log.error("Error sending notification to user: {}", user.getId(), e);
+                if (e.toString().contains("Requested entity was not found")) {
+                    log.error("Error sending notification to user: {} {}", user.getId(), e.toString());
+                } else {
+                    log.error("Error sending notification to user: {}", user.getId(), e);
+                }
             }
         }
     }

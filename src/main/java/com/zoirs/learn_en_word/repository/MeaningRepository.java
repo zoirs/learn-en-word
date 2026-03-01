@@ -30,17 +30,18 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
        """)
     List<MeaningEntity> findByText(String text);
 
-    @Query("""
-       SELECT m
-       FROM MeaningEntity m
-       WHERE m.text IN :texts
-         AND m.frequencyPercent IS NOT NULL
-         AND m.frequencyPercent = (
-             SELECT MAX(m2.frequencyPercent)
-             FROM MeaningEntity m2
-             WHERE m2.text = m.text
-         )
-       """)
+    @Query(value = """
+            SELECT DISTINCT ON (m.text) m.*
+            FROM meaning_entity m
+            WHERE m.text IN (:texts)
+              AND m.frequency_percent IS NOT NULL
+              AND m.frequency_percent = (
+                  SELECT MAX(m2.frequency_percent)
+                  FROM meaning_entity m2
+                  WHERE m2.text = m.text
+              )
+            ORDER BY m.text, RANDOM()
+            """, nativeQuery = true)
     List<MeaningEntity> findByTextIn(Set<String> texts);
 
     @Query("SELECT m FROM MeaningEntity m WHERE m.externalId IN :externalIds")
