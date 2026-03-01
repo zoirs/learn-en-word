@@ -32,12 +32,12 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
 
     @Query(value = """
             SELECT DISTINCT ON (m.text) m.*
-            FROM meaning_entity m
+            FROM meanings m
             WHERE m.text IN (:texts)
               AND m.frequency_percent IS NOT NULL
               AND m.frequency_percent = (
                   SELECT MAX(m2.frequency_percent)
-                  FROM meaning_entity m2
+                  FROM meanings m2
                   WHERE m2.text = m.text
               )
             ORDER BY m.text, RANDOM()
