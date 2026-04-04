@@ -29,19 +29,19 @@ public class ChatGPTService {
                     "easier", Map.of(
                             "type", "array",
                             "items", Map.of("type", "string"),
-                            "minItems", 2,
-                            "maxItems", 2
+                            "minItems", 3,
+                            "maxItems", 4
                     ),
                     "same", Map.of(
                             "type", "array",
                             "items", Map.of("type", "string"),
                             "minItems", 3,
-                            "maxItems", 3
+                            "maxItems", 4
                     ),
                     "harder", Map.of(
                             "type", "array",
                             "items", Map.of("type", "string"),
-                            "minItems", 4,
+                            "minItems", 3,
                             "maxItems", 4
                     )
             ),
