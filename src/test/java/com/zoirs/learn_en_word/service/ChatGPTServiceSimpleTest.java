@@ -30,7 +30,6 @@ class ChatGPTServiceSimpleTest {
     @BeforeEach
     void setUp() {
         chatGPTService = new ChatGPTService(chatGPTClient);
-        ReflectionTestUtils.setField(chatGPTService, "model", "gpt-3.5-turbo");
     }
 
     @Test

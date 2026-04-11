@@ -20,9 +20,6 @@ public class ChatGPTService {
 
     private final ChatGPTClient chatGPTClient;
 
-//    @Value("${openai.api.model:gpt-4o-mini}")
-    private static final String model = "gpt-4.1";
-
     Map<String, Object> schema = Map.of(
             "type", "object",
             "properties", Map.of(
@@ -78,7 +75,6 @@ public class ChatGPTService {
                     )
             );
             ChatGPTRequest request = new ChatGPTRequest(
-                    model,
                     List.of(
                             ChatGPTRequest.Message.systemMessage(SYSTEM_PROMPT),
                             ChatGPTRequest.Message.userMessage(prompt)
