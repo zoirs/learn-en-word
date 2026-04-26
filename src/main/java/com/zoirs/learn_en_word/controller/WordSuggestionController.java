@@ -1,10 +1,10 @@
 package com.zoirs.learn_en_word.controller;
 
 import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
-import com.zoirs.learn_en_word.mapper.WordMapper;
 import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.repository.MeaningRepository;
 import com.zoirs.learn_en_word.service.ChatGPTService;
+import com.zoirs.learn_en_word.service.DatabaseWordSuggestionService;
 import com.zoirs.learn_en_word.service.DictionaryCacheService;
 import com.zoirs.learn_en_word.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +31,7 @@ public class WordSuggestionController {
 
     private static final Logger log = LoggerFactory.getLogger(WordSuggestionController.class);
     private final ChatGPTService chatGPTService;
+    private final DatabaseWordSuggestionService databaseWordSuggestionService;
     private final UserService userService;
     private final DictionaryCacheService dictionaryCacheService;
     private final MeaningRepository meaningRepository;
@@ -56,6 +57,24 @@ public class WordSuggestionController {
 
         Set<Integer> newWords = result.stream().map(Meaning::getId).collect(Collectors.toSet());
         log.info("New words for userId {}: {}", state.getUserId(), newWords);
+        userService.updateUserWords(state.getUserId(), state.getKnownWords(), state.getLearningWords(), newWords);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/post/db")
+    @Operation(summary = "Get database word suggestions",
+            description = "Get word suggestions from the local database based on known and currently learning words")
+    public ResponseEntity<List<Meaning>> getDatabaseWordSuggestions(
+            @RequestBody State state
+    ) {
+        Set<String> suggestions = databaseWordSuggestionService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
+        if (suggestions == null || suggestions.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        List<Meaning> result = dictionaryCacheService.searchWords(suggestions);
+
+        Set<Integer> newWords = result.stream().map(Meaning::getId).collect(Collectors.toSet());
+        log.info("New database words for userId {}: {}", state.getUserId(), newWords);
         userService.updateUserWords(state.getUserId(), state.getKnownWords(), state.getLearningWords(), newWords);
         return ResponseEntity.ok(result);
     }

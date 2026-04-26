@@ -1,7 +1,7 @@
 package com.zoirs.learn_en_word.service;
 
 import com.zoirs.learn_en_word.client.ChatGPTClient;
-import com.zoirs.learn_en_word.config.ChatGPTConfig;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoirs.learn_en_word.dto.chatgpt.ChatGPTResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,13 +10,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,7 +29,7 @@ class ChatGPTServiceSimpleTest {
 
     @BeforeEach
     void setUp() {
-        chatGPTService = new ChatGPTService(chatGPTClient);
+        chatGPTService = new ChatGPTService(chatGPTClient, new ObjectMapper());
     }
 
     @Test
@@ -42,8 +42,11 @@ class ChatGPTServiceSimpleTest {
         ChatGPTResponse response = new ChatGPTResponse();
         ChatGPTResponse.Choice choice = new ChatGPTResponse.Choice();
         ChatGPTResponse.Message message = new ChatGPTResponse.Message();
-        message.setContent("giraffe, kangaroo, watermelon, bicycle, umbrella");
+        message.setContent("""
+                {"easier":["gift","lend","worry"],"same":["guess","take","careful"],"harder":["chance","return","likely"]}
+                """);
         choice.setMessage(message);
+        choice.setFinish_reason("stop");
         response.setChoices(List.of(choice));
 
         when(chatGPTClient.generateResponse(any()))
@@ -55,7 +58,7 @@ class ChatGPTServiceSimpleTest {
         // Then
         assertNotNull(result, "Returned words list should not be null");
         assertFalse(result.isEmpty(), "Returned words list should not be empty");
-        assertTrue(result.size() >= 3, "Should return at least 3 suggested words");
+        assertEquals(9, result.size(), "Should return all suggested words");
         
         // Verify each word is not empty
         result.forEach(word -> {
@@ -67,28 +70,37 @@ class ChatGPTServiceSimpleTest {
     @Test
     void suggestNewWords_WithEmptyInput_ReturnsEmptyList() {
         // Given
-        Set<String> emptyList = Set.of();
-        when(chatGPTClient.generateResponse(any()))
-                .thenReturn(ResponseEntity.ok(new ChatGPTResponse()));
+        Set<String> emptySet = Set.of();
 
         // When
-        Set<String> result = chatGPTService.suggestNewWords(emptyList, emptyList);
+        Set<String> result = chatGPTService.suggestNewWords(emptySet, emptySet);
 
         // Then
         assertTrue(result.isEmpty(), "Should return empty list for empty input");
+        verifyNoInteractions(chatGPTClient);
     }
+
     @Test
-    void suggestNewWords_WithEmptyInput_ReturnsEmptyList1() {
+    void suggestNewWords_FiltersKnownLearningAndPhrases() {
         // Given
-//        Set<String> emptyList = Set.of();
-//        when(chatGPTClient.generateResponse(any()))
-//                .thenReturn(ResponseEntity.ok(new ChatGPTResponse()));
+        ChatGPTResponse response = new ChatGPTResponse();
+        ChatGPTResponse.Choice choice = new ChatGPTResponse.Choice();
+        ChatGPTResponse.Message message = new ChatGPTResponse.Message();
+        message.setContent("""
+                {"easier":["dog","new word"," Gift "],"same":["book","take","Careful"],"harder":["chance","return","likely"]}
+                """);
+        choice.setMessage(message);
+        choice.setFinish_reason("stop");
+        response.setChoices(List.of(choice));
+
+        when(chatGPTClient.generateResponse(any()))
+                .thenReturn(ResponseEntity.ok(response));
 
         // When
-        Set<String> result = chatGPTService.suggestNewWords(Set.of("dog"), Set.of("book", "chair", "like", "apple", "school", "run", "mother"));
+        Set<String> result = chatGPTService.suggestNewWords(Set.of("dog"), Set.of("book", "chair"));
 
         // Then
-        assertTrue(result.isEmpty(), "Should return empty list for empty input");
+        assertEquals(Set.of("gift", "take", "careful", "chance", "return", "likely"), result);
     }
 
     @Test

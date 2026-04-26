@@ -48,6 +48,29 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
 //    @EntityGraph(attributePaths = "exampleEntities")
     List<MeaningEntity> findByExternalIdIn(List<Integer> externalIds);
+
+    @Query(value = """
+            SELECT *
+            FROM (
+                SELECT DISTINCT ON (m.text) m.*
+                FROM meanings m
+                WHERE m.difficulty_level = :difficultyLevel
+                  AND m.external_id NOT IN (:excludedExternalIds)
+                  AND LOWER(m.text) NOT IN (:excludedTexts)
+                  AND m.text IS NOT NULL
+                  AND m.frequency_percent IS NOT NULL
+                  AND COALESCE(m.is_valid, true) = true
+                ORDER BY m.text, m.frequency_percent DESC, RANDOM()
+            ) suggested_meanings
+            ORDER BY RANDOM()
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<MeaningEntity> findSuggestionsByDifficultyLevel(
+            @Param("difficultyLevel") int difficultyLevel,
+            @Param("excludedExternalIds") Set<Integer> excludedExternalIds,
+            @Param("excludedTexts") Set<String> excludedTexts,
+            @Param("limit") int limit
+    );
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     boolean existsByExternalId(Integer externalId);
