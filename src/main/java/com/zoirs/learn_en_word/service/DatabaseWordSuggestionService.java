@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 public class DatabaseWordSuggestionService {
 
     private static final int WORDS_PER_LEVEL = 2;
+    private static final int MAX_TEXT_LENGTH_EXCLUSIVE = 20;
 
     private final MeaningRepository meaningRepository;
 
@@ -104,6 +105,7 @@ public class DatabaseWordSuggestionService {
                 .map(MeaningEntity::getText)
                 .filter(Objects::nonNull)
                 .filter(word -> !word.isBlank())
+                .filter(word -> word.length() < MAX_TEXT_LENGTH_EXCLUSIVE)
                 .filter(word -> !excludedTexts.contains(word.toLowerCase(Locale.ROOT)))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
