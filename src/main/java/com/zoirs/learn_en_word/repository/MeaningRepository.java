@@ -58,6 +58,7 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                   AND m.external_id NOT IN (:excludedExternalIds)
                   AND LOWER(m.text) NOT IN (:excludedTexts)
                   AND m.text IS NOT NULL
+                  AND COALESCE(m.part_of_speech_code, '') <> 'ph'
                   AND m.frequency_percent IS NOT NULL
                   AND COALESCE(m.is_valid, true) = true
                 ORDER BY m.text, m.frequency_percent DESC, RANDOM()
