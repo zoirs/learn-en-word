@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,8 +50,12 @@ public class WordSuggestionController {
         List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
         Set<String> knownWords = meanings.stream().filter(q -> state.getKnownWords().contains(q.getExternalId())).map(MeaningEntity::getText).collect(Collectors.toSet());
         Set<String> learningWords = meanings.stream().filter(q -> state.getLearningWords().contains(q.getExternalId())).map(MeaningEntity::getText).collect(Collectors.toSet());
-        Set<String> suggestions = chatGPTService.suggestNewWords(knownWords, learningWords);
-        if (suggestions == null || suggestions.isEmpty()) {
+        Set<String> aiWords = chatGPTService.suggestNewWords(knownWords, learningWords);
+        Set<String> dbWords = databaseWordSuggestionService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
+        Set<String> suggestions = new HashSet<>(aiWords);
+        suggestions.addAll(dbWords);
+        if (suggestions.isEmpty()) {
+            log.info("No new words suggested for userId {}", state.getUserId());
             return ResponseEntity.noContent().build();
         }
         List<Meaning> result = dictionaryCacheService.searchWords(suggestions);
