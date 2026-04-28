@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class DatabaseWordSuggestionService {
 
-    private static final int WORDS_PER_LEVEL = 2;
+    private static final int WORDS_PER_LEVEL = 3;
     private static final int MAX_TEXT_LENGTH_EXCLUSIVE = 20;
 
     private final MeaningRepository meaningRepository;
