@@ -61,6 +61,13 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                   AND COALESCE(m.part_of_speech_code, '') <> 'ph'
                   AND m.frequency_percent IS NOT NULL
                   AND COALESCE(m.is_valid, true) = true
+                  AND EXISTS (
+                      SELECT 1
+                      FROM examples e
+                      WHERE e.meaning_id = m.id
+                        AND e.text IS NOT NULL
+                        AND BTRIM(e.text) <> ''
+                  )
                 ORDER BY m.text, m.frequency_percent DESC, RANDOM()
             ) suggested_meanings
             ORDER BY RANDOM()
