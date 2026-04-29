@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -51,7 +52,7 @@ public class UserProgressSyncService {
         mergeUserData(user, req);
         userRepository.save(user);
 
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS);
         UserProgressSyncSnapshot snapshot = snapshotRepository.findById(userId)
                 .orElseGet(UserProgressSyncSnapshot::new);
         snapshot.setUserId(userId);
@@ -66,7 +67,7 @@ public class UserProgressSyncService {
         log.info("Synced progress snapshot for userId={}, words={}, sessions={}",
                 userId, snapshot.getWordProgressCount(), snapshot.getDailySessionCount());
 
-        return new UserProgressSyncResponse("ok", userId, now);
+        return new UserProgressSyncResponse("ok", userId, snapshot.getSyncedAt());
     }
 
     @Transactional(readOnly = true)
