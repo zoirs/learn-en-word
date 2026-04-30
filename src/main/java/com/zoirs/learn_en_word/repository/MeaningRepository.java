@@ -63,7 +63,6 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                   AND m.frequency_percent IS NOT NULL
                   AND m.wordfreq_frequency > 0
                   AND m.wordfreq_zipf >= :minWordfreqZipf
-                  AND m.wordfreq_min_frequency >= :minWordfreqMinFrequency
                   AND m.is_valid = true
                   AND EXISTS (
                       SELECT 1
@@ -82,7 +81,6 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
             @Param("excludedExternalIds") Set<Integer> excludedExternalIds,
             @Param("excludedTexts") Set<String> excludedTexts,
             @Param("minWordfreqZipf") double minWordfreqZipf,
-            @Param("minWordfreqMinFrequency") double minWordfreqMinFrequency,
             @Param("maxTextLengthExclusive") int maxTextLengthExclusive,
             @Param("limit") int limit
     );
