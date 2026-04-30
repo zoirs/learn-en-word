@@ -1,12 +1,16 @@
 package com.zoirs.learn_en_word.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +49,22 @@ public class MeaningEntity extends BaseEntity {
     private String mnemonics;
     private Integer frequencyPercent;
     private Boolean isValid;
+    
+    @Column(name = "wordfreq_frequency")
+    private Double wordfreqFrequency;
+    
+    @Column(name = "wordfreq_zipf")
+    private Double wordfreqZipf;
+    
+    @Column(name = "wordfreq_min_frequency")
+    private Double wordfreqMinFrequency;
+    
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "wordfreq_tokens", columnDefinition = "jsonb")
+    private JsonNode wordfreqTokens;
+    
+    @Column(name = "wordfreq_updated_at")
+    private LocalDateTime wordfreqUpdatedAt;
 
     @OneToOne(mappedBy = "meaning", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private TranslationEntity translationEntity;

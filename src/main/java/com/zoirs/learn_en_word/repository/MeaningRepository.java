@@ -60,6 +60,9 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                   AND m.text IS NOT NULL
                   AND COALESCE(m.part_of_speech_code, '') <> 'ph'
                   AND m.frequency_percent IS NOT NULL
+                  AND m.wordfreq_frequency > 0
+                  AND m.wordfreq_zipf >= :minWordfreqZipf
+                  AND m.wordfreq_min_frequency >= :minWordfreqMinFrequency
                   AND COALESCE(m.is_valid, true) = true
                   AND EXISTS (
                       SELECT 1
@@ -70,13 +73,15 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                   )
                 ORDER BY m.text, m.frequency_percent DESC, RANDOM()
             ) suggested_meanings
-            ORDER BY RANDOM()
+            ORDER BY wordfreq_zipf DESC, RANDOM()
             LIMIT :limit
             """, nativeQuery = true)
     List<MeaningEntity> findSuggestionsByDifficultyLevel(
             @Param("difficultyLevel") int difficultyLevel,
             @Param("excludedExternalIds") Set<Integer> excludedExternalIds,
             @Param("excludedTexts") Set<String> excludedTexts,
+            @Param("minWordfreqZipf") double minWordfreqZipf,
+            @Param("minWordfreqMinFrequency") double minWordfreqMinFrequency,
             @Param("limit") int limit
     );
     

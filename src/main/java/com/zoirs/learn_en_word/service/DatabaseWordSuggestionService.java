@@ -23,6 +23,8 @@ public class DatabaseWordSuggestionService {
 
     private static final int WORDS_PER_LEVEL = 3;
     private static final int MAX_TEXT_LENGTH_EXCLUSIVE = 20;
+    private static final double MIN_WORDFREQ_ZIPF = 2.5d;
+    private static final double MIN_WORDFREQ_MIN_FREQUENCY = 1.0e-8d;
 
     private final MeaningRepository meaningRepository;
 
@@ -100,10 +102,13 @@ public class DatabaseWordSuggestionService {
                         difficultyLevel,
                         excludedExternalIds,
                         excludedTexts.isEmpty() ? Set.of("__no_excluded_text__") : excludedTexts,
+                        MIN_WORDFREQ_ZIPF,
+                        MIN_WORDFREQ_MIN_FREQUENCY,
                         WORDS_PER_LEVEL
                 ).stream()
                 .map(MeaningEntity::getText)
                 .filter(Objects::nonNull)
+                .map(String::trim)
                 .filter(word -> !word.isBlank())
                 .filter(word -> word.length() < MAX_TEXT_LENGTH_EXCLUSIVE)
                 .filter(word -> !excludedTexts.contains(word.toLowerCase(Locale.ROOT)))
