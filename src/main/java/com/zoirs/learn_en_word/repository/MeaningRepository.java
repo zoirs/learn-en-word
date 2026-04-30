@@ -73,7 +73,7 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                   )
                 ORDER BY m.text, m.frequency_percent DESC, RANDOM()
             ) suggested_meanings
-            ORDER BY wordfreq_zipf DESC, RANDOM()
+            ORDER BY RANDOM()
             LIMIT :limit
             """, nativeQuery = true)
     List<MeaningEntity> findSuggestionsByDifficultyLevel(
