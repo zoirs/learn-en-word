@@ -23,7 +23,7 @@ public class DatabaseWordSuggestionService {
 
     private static final int WORDS_PER_LEVEL = 3;
     private static final int MAX_TEXT_LENGTH_EXCLUSIVE = 20;
-    private static final double MIN_WORDFREQ_ZIPF = 2.5d;
+    private static final double MIN_WORDFREQ_ZIPF = 3d;
     private static final double MIN_WORDFREQ_MIN_FREQUENCY = 1.0e-8d;
 
     private final MeaningRepository meaningRepository;

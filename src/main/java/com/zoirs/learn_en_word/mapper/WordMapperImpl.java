@@ -113,6 +113,7 @@ public class WordMapperImpl implements WordMapper {
         List<Example> collect = exampleEntities.stream().map(this::toDto).collect(Collectors.toList());
         meaning.setExamples(collect);// todo добавить
         meaning.setFrequencyPercent(entity.getFrequencyPercent());
+        meaning.setWordfreqZipf(entity.getWordfreqZipf());
         return meaning;
     }
     // удалил  in (12697,12698,12699,12700)
