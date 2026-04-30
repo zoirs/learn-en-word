@@ -58,12 +58,13 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                   AND m.external_id NOT IN (:excludedExternalIds)
                   AND LOWER(m.text) NOT IN (:excludedTexts)
                   AND m.text IS NOT NULL
+                  AND LENGTH(BTRIM(m.text)) < :maxTextLengthExclusive
                   AND COALESCE(m.part_of_speech_code, '') <> 'ph'
                   AND m.frequency_percent IS NOT NULL
                   AND m.wordfreq_frequency > 0
                   AND m.wordfreq_zipf >= :minWordfreqZipf
                   AND m.wordfreq_min_frequency >= :minWordfreqMinFrequency
-                  AND COALESCE(m.is_valid, true) = true
+                  AND m.is_valid = true
                   AND EXISTS (
                       SELECT 1
                       FROM examples e
@@ -82,6 +83,7 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
             @Param("excludedTexts") Set<String> excludedTexts,
             @Param("minWordfreqZipf") double minWordfreqZipf,
             @Param("minWordfreqMinFrequency") double minWordfreqMinFrequency,
+            @Param("maxTextLengthExclusive") int maxTextLengthExclusive,
             @Param("limit") int limit
     );
     

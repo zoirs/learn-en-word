@@ -98,19 +98,21 @@ public class DatabaseWordSuggestionService {
         if (difficultyLevel <= 0) {
             return Collections.emptySet();
         }
+        log.info("Finding words by level: difficultyLevel={}, excludedExternalIds={}, excludedTexts={}",
+                difficultyLevel, excludedExternalIds, excludedTexts);
         return meaningRepository.findSuggestionsByDifficultyLevel(
                         difficultyLevel,
                         excludedExternalIds,
                         excludedTexts.isEmpty() ? Set.of("__no_excluded_text__") : excludedTexts,
                         MIN_WORDFREQ_ZIPF,
                         MIN_WORDFREQ_MIN_FREQUENCY,
+                        MAX_TEXT_LENGTH_EXCLUSIVE,
                         WORDS_PER_LEVEL
                 ).stream()
                 .map(MeaningEntity::getText)
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(word -> !word.isBlank())
-                .filter(word -> word.length() < MAX_TEXT_LENGTH_EXCLUSIVE)
                 .filter(word -> !excludedTexts.contains(word.toLowerCase(Locale.ROOT)))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
