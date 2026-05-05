@@ -44,6 +44,11 @@ public class WordSuggestionController {
     public ResponseEntity<List<Meaning>> getWordSuggestions(
             @RequestBody State state
     ) {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            log.error("InterruptedException", e);
+        }
         List<Integer> ids = new ArrayList<>();
         ids.addAll(state.getKnownWords());
         ids.addAll(state.getLearningWords());
