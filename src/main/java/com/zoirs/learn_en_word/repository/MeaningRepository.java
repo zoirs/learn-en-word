@@ -59,7 +59,7 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                   AND LOWER(m.text) NOT IN (:excludedTexts)
                   AND m.text IS NOT NULL
                   AND LENGTH(BTRIM(m.text)) < :maxTextLengthExclusive
-                  AND COALESCE(m.part_of_speech_code, '') <> 'ph'
+                  AND m.part_of_speech_code IN ('j', 'n', 'r', 'v')
                   AND m.frequency_percent IS NOT NULL
                   AND m.wordfreq_frequency > 0
                   AND m.wordfreq_zipf >= :minWordfreqZipf
