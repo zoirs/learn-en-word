@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -36,7 +35,7 @@ public class MeaningPopularityUpdateService {
 
     private final RestTemplate restTemplate;
     private final MeaningRepository meaningRepository;
-    private final AtomicBoolean startupUpdateStarted = new AtomicBoolean(false);
+    private final AtomicBoolean updateRunning = new AtomicBoolean(false);
 
     @Value("${skyeng.gateway.base-url:https://dictionary-gateway.skyeng.ru}")
     private String gatewayBaseUrl;
@@ -50,21 +49,24 @@ public class MeaningPopularityUpdateService {
     @Value("${skyeng.gateway.popularity-update.error-delay-ms:120000}")
     private long errorDelayMs;
 
-    @Scheduled(
-            initialDelayString = "${skyeng.gateway.popularity-update.startup-delay-ms:30000}",
-            fixedDelay = Long.MAX_VALUE
-    )
-    public void updateAllPopularitiesOnStartup() {
-        if (!startupUpdateStarted.compareAndSet(false, true)) {
-            return;
+    public boolean startUpdateAllPopularities(int lastWordId) {
+        if (!updateRunning.compareAndSet(false, true)) {
+            return false;
         }
 
-        CompletableFuture.runAsync(this::runStartupUpdate);
+        CompletableFuture.runAsync(() -> runUpdateAllPopularities(Math.max(0, lastWordId)))
+                .whenComplete((ignored, throwable) -> {
+                    updateRunning.set(false);
+                    if (throwable != null) {
+                        log.error("Meaning popularity update failed", throwable);
+                    }
+                });
+        return true;
     }
 
-    private void runStartupUpdate() {
-        log.info("Starting meaning popularity update");
-        UpdateResult result = updateAllPopularities();
+    private void runUpdateAllPopularities(int lastWordId) {
+        log.info("Starting meaning popularity update from lastWordId {}", lastWordId);
+        UpdateResult result = updateAllPopularities(lastWordId, DEFAULT_WORD_ID_BATCH_SIZE);
         log.info(
                 "Finished meaning popularity update. processedWordIds={}, updatedMeanings={}, failedWordIds={}",
                 result.getProcessedWordIds(),
@@ -73,12 +75,7 @@ public class MeaningPopularityUpdateService {
         );
     }
 
-    public UpdateResult updateAllPopularities() {
-        return updateAllPopularities(DEFAULT_WORD_ID_BATCH_SIZE);
-    }
-
-    private UpdateResult updateAllPopularities(int wordIdBatchSize) {
-        int lastWordId = 0;
+    private UpdateResult updateAllPopularities(int lastWordId, int wordIdBatchSize) {
         int processedWordIds = 0;
         int updatedMeanings = 0;
         int failedWordIds = 0;

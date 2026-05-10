@@ -5,9 +5,8 @@ skyeng:
   gateway:
     base-url: https://dictionary-gateway.skyeng.ru
     popularity-update:
-      startup-delay-ms: 30000
-      min-request-delay-ms: 10000
-      max-request-delay-ms: 60000
+      min-request-delay-ms: 5000
+      max-request-delay-ms: 10000
       error-delay-ms: 180000
 
 # Server Configuration
