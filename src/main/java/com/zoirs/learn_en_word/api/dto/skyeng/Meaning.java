@@ -39,6 +39,7 @@ public class Meaning {
     //этого поля нет в скайенг
     //todo отделить модель скайенг от дто
     private Integer frequencyPercent;
+    private Double popularity;
     @JsonProperty("wordfreq_zipf")
     private Double wordfreqZipf;
 }

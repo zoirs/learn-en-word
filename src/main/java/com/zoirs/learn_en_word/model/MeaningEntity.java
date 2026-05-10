@@ -48,6 +48,7 @@ public class MeaningEntity extends BaseEntity {
     private String transcription;
     private String mnemonics;
     private Integer frequencyPercent;
+    private Double popularity;
     private Boolean isValid;
     
     @Column(name = "wordfreq_frequency")

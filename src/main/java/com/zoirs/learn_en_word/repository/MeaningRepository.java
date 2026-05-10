@@ -20,7 +20,19 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
     Optional<MeaningEntity> findByExternalId(Integer externalId);
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
-    List<MeaningEntity> findByWordId(Integer wordId);
+    List<MeaningEntity> findByWordIdAndIsValidTrue(Integer wordId);
+
+    @Query(value = """
+            SELECT DISTINCT word_id
+            FROM meanings
+            WHERE word_id IS NOT NULL
+              AND is_valid = true
+              AND word_id > :lastWordId
+            ORDER BY word_id
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<Integer> findDistinctWordIdsAfter(@Param("lastWordId") int lastWordId,
+                                           @Param("limit") int limit);
 
     @Query("""
        SELECT m

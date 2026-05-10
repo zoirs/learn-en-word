@@ -113,6 +113,7 @@ public class WordMapperImpl implements WordMapper {
         List<Example> collect = exampleEntities.stream().map(this::toDto).collect(Collectors.toList());
         meaning.setExamples(collect);// todo добавить
         meaning.setFrequencyPercent(entity.getFrequencyPercent());
+        meaning.setPopularity(entity.getPopularity());
         meaning.setWordfreqZipf(entity.getWordfreqZipf());
         return meaning;
     }
@@ -164,6 +165,7 @@ public class WordMapperImpl implements WordMapper {
         meaning.setSoundUrl(dto.getSoundUrl());
         meaning.setTranscription(dto.getTranscription());
         meaning.setMnemonics(dto.getMnemonics());
+        meaning.setPopularity(dto.getPopularity());
 
         if (dto.getTranslation() != null) {
             TranslationEntity translation = toEntity(dto.getTranslation(), meaning);
