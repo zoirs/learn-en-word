@@ -19,8 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,14 +57,20 @@ public class WordSuggestionController {
         Set<String> knownWords = meanings.stream().filter(q -> state.getKnownWords().contains(q.getExternalId())).map(MeaningEntity::getText).collect(Collectors.toSet());
         Set<String> learningWords = meanings.stream().filter(q -> state.getLearningWords().contains(q.getExternalId())).map(MeaningEntity::getText).collect(Collectors.toSet());
         Set<String> aiWords = chatGPTService.suggestNewWords(knownWords, learningWords);
-        Set<String> dbWords = databaseWordSuggestionService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
-        Set<String> suggestions = new HashSet<>(aiWords);
-        suggestions.addAll(dbWords);
-        if (suggestions.isEmpty()) {
+        Set<Integer> dbWordIds = databaseWordSuggestionService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
+        if (aiWords.isEmpty() && dbWordIds.isEmpty()) {
             log.info("No new words suggested for userId {}", state.getUserId());
             return ResponseEntity.noContent().build();
         }
-        List<Meaning> result = dictionaryCacheService.searchWords(suggestions);
+        Map<Integer, Meaning> resultById = new LinkedHashMap<>();
+        if (!aiWords.isEmpty()) {
+            dictionaryCacheService.searchWords(aiWords).forEach(meaning -> resultById.put(meaning.getId(), meaning));
+        }
+        if (!dbWordIds.isEmpty()) {
+            dictionaryCacheService.getMeanings(new ArrayList<>(dbWordIds))
+                    .forEach(meaning -> resultById.put(meaning.getId(), meaning));
+        }
+        List<Meaning> result = new ArrayList<>(resultById.values());
 
         Set<Integer> newWords = result.stream().map(Meaning::getId).collect(Collectors.toSet());
         log.info("New words for userId {}: {}", state.getUserId(), newWords);
@@ -77,11 +84,11 @@ public class WordSuggestionController {
     public ResponseEntity<List<Meaning>> getDatabaseWordSuggestions(
             @RequestBody State state
     ) {
-        Set<String> suggestions = databaseWordSuggestionService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
-        if (suggestions == null || suggestions.isEmpty()) {
+        Set<Integer> suggestions = databaseWordSuggestionService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
+        if (suggestions.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        List<Meaning> result = dictionaryCacheService.searchWords(suggestions);
+        List<Meaning> result = dictionaryCacheService.getMeanings(new ArrayList<>(suggestions));
 
         Set<Integer> newWords = result.stream().map(Meaning::getId).collect(Collectors.toSet());
         log.info("New database words for userId {}: {}", state.getUserId(), newWords);

@@ -48,14 +48,14 @@ class DatabaseWordSuggestionServiceTest {
         when(meaningRepository.findSuggestionsByDifficultyLevel(eq(4), anySet(), anySet(), anyDouble(), eq(20), eq(3)))
                 .thenReturn(List.of(meaning(14, "hard-one", 4), meaning(15, "hard-two", 4)));
 
-        Set<String> result = databaseWordSuggestionService.suggestNewWords(Set.of(1), Set.of(2, 3));
+        Set<Integer> result = databaseWordSuggestionService.suggestNewWords(Set.of(1), Set.of(2, 3));
 
-        assertEquals(Set.of("easy-one", "easy-two", "same-one", "same-two", "hard-one", "hard-two"), result);
+        assertEquals(Set.of(10, 11, 12, 13, 14, 15), result);
     }
 
     @Test
     void suggestNewWords_WithEmptyInput_ReturnsEmptySetWithoutRepositoryCalls() {
-        Set<String> result = databaseWordSuggestionService.suggestNewWords(Set.of(), Set.of());
+        Set<Integer> result = databaseWordSuggestionService.suggestNewWords(Set.of(), Set.of());
 
         assertTrue(result.isEmpty());
         verifyNoInteractions(meaningRepository);
@@ -76,9 +76,9 @@ class DatabaseWordSuggestionServiceTest {
         when(meaningRepository.findSuggestionsByDifficultyLevel(eq(3), anySet(), anySet(), anyDouble(), eq(20), eq(3)))
                 .thenReturn(List.of(meaning(12, "hard", 3)));
 
-        Set<String> result = databaseWordSuggestionService.suggestNewWords(Set.of(1, 2), Set.of(3));
+        Set<Integer> result = databaseWordSuggestionService.suggestNewWords(Set.of(1, 2), Set.of(3));
 
-        assertEquals(Set.of("easy", "same", "hard"), result);
+        assertEquals(Set.of(10, 11, 12), result);
     }
 
     @Test
@@ -96,9 +96,9 @@ class DatabaseWordSuggestionServiceTest {
         when(meaningRepository.findSuggestionsByDifficultyLevel(eq(3), anySet(), anySet(), anyDouble(), eq(20), eq(3)))
                 .thenReturn(List.of());
 
-        Set<String> result = databaseWordSuggestionService.suggestNewWords(Set.of(1), Set.of());
+        Set<Integer> result = databaseWordSuggestionService.suggestNewWords(Set.of(1), Set.of());
 
-        assertEquals(Set.of("useful"), result);
+        assertEquals(Set.of(10), result);
     }
 
     private MeaningEntity meaning(Integer externalId, String text, Integer difficultyLevel) {

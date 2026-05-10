@@ -27,7 +27,7 @@ public class DatabaseWordSuggestionService {
 
     private final MeaningRepository meaningRepository;
 
-    public Set<String> suggestNewWords(Set<Integer> knownWords, Set<Integer> learningWords) {
+    public Set<Integer> suggestNewWords(Set<Integer> knownWords, Set<Integer> learningWords) {
         Set<Integer> knownWordIds = normalizeIds(knownWords);
         Set<Integer> learningWordIds = normalizeIds(learningWords);
         Set<Integer> excludedExternalIds = Stream.concat(knownWordIds.stream(), learningWordIds.stream())
@@ -53,16 +53,16 @@ public class DatabaseWordSuggestionService {
                 .map(text -> text.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
 
-        Set<String> easier = findWordsByLevel(currentLevel - 1, excludedExternalIds, excludedTexts);
-        Set<String> same = findWordsByLevel(currentLevel, excludedExternalIds, excludedTexts);
-        Set<String> harder = findWordsByLevel(currentLevel + 1, excludedExternalIds, excludedTexts);
+        List<MeaningEntity> easier = findWordsByLevel(currentLevel - 1, excludedExternalIds, excludedTexts);
+        List<MeaningEntity> same = findWordsByLevel(currentLevel, excludedExternalIds, excludedTexts);
+        List<MeaningEntity> harder = findWordsByLevel(currentLevel + 1, excludedExternalIds, excludedTexts);
 
-        Set<String> suggestions = new LinkedHashSet<>();
-        suggestions.addAll(easier);
-        suggestions.addAll(same);
-        suggestions.addAll(harder);
+        Set<Integer> suggestions = new LinkedHashSet<>();
+        suggestions.addAll(toExternalIds(easier));
+        suggestions.addAll(toExternalIds(same));
+        suggestions.addAll(toExternalIds(harder));
         log.info("Database word suggestions: level={}, easier={}, same={}, harder={}",
-                currentLevel, easier, same, harder);
+                currentLevel, toTexts(easier), toTexts(same), toTexts(harder));
         return suggestions;
     }
 
@@ -93,12 +93,12 @@ public class DatabaseWordSuggestionService {
                 .orElseThrow());
     }
 
-    private Set<String> findWordsByLevel(int difficultyLevel, Set<Integer> excludedExternalIds, Set<String> excludedTexts) {
+    private List<MeaningEntity> findWordsByLevel(int difficultyLevel, Set<Integer> excludedExternalIds, Set<String> excludedTexts) {
         if (difficultyLevel <= 0) {
-            return Collections.emptySet();
+            return Collections.emptyList();
         }
-        log.info("Finding words by level: difficultyLevel={}, excludedExternalIds={}, excludedTexts={}",
-                difficultyLevel, excludedExternalIds, excludedTexts);
+//        log.info("Finding words by level: difficultyLevel={}, excludedExternalIds={}, excludedTexts={}",
+//                difficultyLevel, excludedExternalIds, excludedTexts);
         return meaningRepository.findSuggestionsByDifficultyLevel(
                         difficultyLevel,
                         excludedExternalIds,
@@ -107,12 +107,24 @@ public class DatabaseWordSuggestionService {
                         MAX_TEXT_LENGTH_EXCLUSIVE,
                         WORDS_PER_LEVEL
                 ).stream()
+                .filter(meaning -> meaning.getText() != null)
+                .filter(meaning -> !meaning.getText().trim().isBlank())
+                .filter(meaning -> !excludedTexts.contains(meaning.getText().trim().toLowerCase(Locale.ROOT)))
+                .toList();
+    }
+
+    private List<Integer> toExternalIds(List<MeaningEntity> meanings) {
+        return meanings.stream()
+                .map(MeaningEntity::getExternalId)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private List<String> toTexts(List<MeaningEntity> meanings) {
+        return meanings.stream()
                 .map(MeaningEntity::getText)
                 .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(word -> !word.isBlank())
-                .filter(word -> !excludedTexts.contains(word.toLowerCase(Locale.ROOT)))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                .toList();
     }
 
     private Set<Integer> normalizeIds(Set<Integer> ids) {
