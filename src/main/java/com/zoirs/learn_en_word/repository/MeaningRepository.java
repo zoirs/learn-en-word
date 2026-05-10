@@ -62,12 +62,10 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
     List<MeaningEntity> findByExternalIdIn(List<Integer> externalIds);
 
     @Query(value = """
-            SELECT *
-            FROM (
-                SELECT DISTINCT ON (m.text) m.*
+            WITH candidate_meanings AS (
+                SELECT m.id, m.word_id, m.difficulty_level, m.text, m.popularity, m.frequency_percent
                 FROM meanings m
-                WHERE m.difficulty_level = :difficultyLevel
-                  AND m.external_id NOT IN (:excludedExternalIds)
+                WHERE m.external_id NOT IN (:excludedExternalIds)
                   AND LOWER(m.text) NOT IN (:excludedTexts)
                   AND m.text IS NOT NULL
                   AND LENGTH(BTRIM(m.text)) < :maxTextLengthExclusive
@@ -83,8 +81,24 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                         AND e.text IS NOT NULL
                         AND BTRIM(e.text) <> ''
                   )
-                ORDER BY m.text, m.frequency_percent DESC, RANDOM()
-            ) suggested_meanings
+            ),
+            best_word_meaning_ids AS (
+                SELECT id
+                FROM (
+                    SELECT cm.id,
+                           cm.difficulty_level,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY cm.word_id
+                               ORDER BY cm.popularity DESC, cm.frequency_percent DESC, RANDOM()
+                   ) AS word_rank
+                    FROM candidate_meanings cm
+                ) ranked_word_meanings
+                WHERE word_rank = 1
+                  AND difficulty_level = :difficultyLevel
+            )
+            SELECT m.*
+            FROM meanings m
+            JOIN best_word_meaning_ids bwm ON bwm.id = m.id
             ORDER BY RANDOM()
             LIMIT :limit
             """, nativeQuery = true)

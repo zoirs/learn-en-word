@@ -62,7 +62,7 @@ public class DatabaseWordSuggestionService {
         suggestions.addAll(toExternalIds(same));
         suggestions.addAll(toExternalIds(harder));
         log.info("Database word suggestions: level={}, easier={}, same={}, harder={}",
-                currentLevel, toTexts(easier), toTexts(same), toTexts(harder));
+                currentLevel, toLogWords(easier), toLogWords(same), toLogWords(harder));
         return suggestions;
     }
 
@@ -120,9 +120,14 @@ public class DatabaseWordSuggestionService {
                 .toList();
     }
 
-    private List<String> toTexts(List<MeaningEntity> meanings) {
+    private List<String> toLogWords(List<MeaningEntity> meanings) {
         return meanings.stream()
-                .map(MeaningEntity::getText)
+                .map(meaning -> "%s(externalId=%s, id=%s, level=%s)".formatted(
+                        meaning.getText(),
+                        meaning.getExternalId(),
+                        meaning.getId(),
+                        meaning.getDifficultyLevel()
+                ))
                 .filter(Objects::nonNull)
                 .toList();
     }
