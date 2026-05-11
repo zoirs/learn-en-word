@@ -146,7 +146,7 @@ public class MeaningPopularityUpdateService {
             return 0;
         }
 
-        List<MeaningEntity> meanings = meaningRepository.findByWordIdAndIsValidTrue(wordId);
+        List<MeaningEntity> meanings = meaningRepository.findByWordId(wordId);
         int updated = 0;
 
         for (MeaningEntity meaning : meanings) {

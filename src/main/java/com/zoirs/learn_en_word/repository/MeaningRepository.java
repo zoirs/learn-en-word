@@ -1,7 +1,6 @@
 package com.zoirs.learn_en_word.repository;
 
 import com.zoirs.learn_en_word.model.MeaningEntity;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
@@ -20,13 +19,12 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
     Optional<MeaningEntity> findByExternalId(Integer externalId);
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
-    List<MeaningEntity> findByWordIdAndIsValidTrue(Integer wordId);
+    List<MeaningEntity> findByWordId(Integer wordId);
 
     @Query(value = """
             SELECT DISTINCT word_id
             FROM meanings
             WHERE word_id IS NOT NULL
-              AND is_valid = true
               AND word_id > :lastWordId
             ORDER BY word_id
             LIMIT :limit
