@@ -21,7 +21,6 @@ import java.util.stream.Stream;
 @Slf4j
 public class DatabaseWordSuggestionService {
 
-    private static final int WORDS_PER_LEVEL = 3;
     private static final int MAX_TEXT_LENGTH_EXCLUSIVE = 20;
     private static final double MIN_POPULARITY = 1d;
 
@@ -30,6 +29,7 @@ public class DatabaseWordSuggestionService {
     public Set<Integer> suggestNewWords(Set<Integer> knownWords, Set<Integer> learningWords) {
         Set<Integer> knownWordIds = normalizeIds(knownWords);
         Set<Integer> learningWordIds = normalizeIds(learningWords);
+        int learningWordsCount = learningWords == null ? 0 : learningWords.size();
         Set<Integer> excludedExternalIds = Stream.concat(knownWordIds.stream(), learningWordIds.stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -44,6 +44,9 @@ public class DatabaseWordSuggestionService {
             log.info("Skipping database word suggestions because current difficulty level cannot be calculated");
             return Collections.emptySet();
         }
+        WordSuggestionLimits.GroupLimits limits = WordSuggestionLimits
+                .forLearningWordsCount(learningWordsCount)
+                .database();
 
         Set<String> excludedTexts = currentMeanings.stream()
                 .map(MeaningEntity::getText)
@@ -53,9 +56,9 @@ public class DatabaseWordSuggestionService {
                 .map(text -> text.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
 
-        List<MeaningEntity> easier = findWordsByLevel(currentLevel - 1, excludedExternalIds, excludedTexts);
-        List<MeaningEntity> same = findWordsByLevel(currentLevel, excludedExternalIds, excludedTexts);
-        List<MeaningEntity> harder = findWordsByLevel(currentLevel + 1, excludedExternalIds, excludedTexts);
+        List<MeaningEntity> easier = findWordsByLevel(currentLevel - 1, excludedExternalIds, excludedTexts, limits.easier());
+        List<MeaningEntity> same = findWordsByLevel(currentLevel, excludedExternalIds, excludedTexts, limits.same());
+        List<MeaningEntity> harder = findWordsByLevel(currentLevel + 1, excludedExternalIds, excludedTexts, limits.harder());
 
         Set<Integer> suggestions = new LinkedHashSet<>();
         suggestions.addAll(toExternalIds(easier));
@@ -93,8 +96,13 @@ public class DatabaseWordSuggestionService {
                 .orElseThrow());
     }
 
-    private List<MeaningEntity> findWordsByLevel(int difficultyLevel, Set<Integer> excludedExternalIds, Set<String> excludedTexts) {
-        if (difficultyLevel <= 0) {
+    private List<MeaningEntity> findWordsByLevel(
+            int difficultyLevel,
+            Set<Integer> excludedExternalIds,
+            Set<String> excludedTexts,
+            int limit
+    ) {
+        if (difficultyLevel <= 0 || limit <= 0) {
             return Collections.emptyList();
         }
 //        log.info("Finding words by level: difficultyLevel={}, excludedExternalIds={}, excludedTexts={}",
@@ -105,7 +113,7 @@ public class DatabaseWordSuggestionService {
                         excludedTexts.isEmpty() ? Set.of("__no_excluded_text__") : excludedTexts,
                         MIN_POPULARITY,
                         MAX_TEXT_LENGTH_EXCLUSIVE,
-                        WORDS_PER_LEVEL
+                        limit
                 ).stream()
                 .filter(meaning -> meaning.getText() != null)
                 .filter(meaning -> !meaning.getText().trim().isBlank())

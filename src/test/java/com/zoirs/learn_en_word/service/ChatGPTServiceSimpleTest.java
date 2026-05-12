@@ -58,7 +58,7 @@ class ChatGPTServiceSimpleTest {
         // Then
         assertNotNull(result, "Returned words list should not be null");
         assertFalse(result.isEmpty(), "Returned words list should not be empty");
-        assertEquals(9, result.size(), "Should return all suggested words");
+        assertEquals(Set.of("gift", "guess", "take", "chance", "return", "likely"), result);
         
         // Verify each word is not empty
         result.forEach(word -> {
@@ -101,6 +101,34 @@ class ChatGPTServiceSimpleTest {
 
         // Then
         assertEquals(Set.of("gift", "take", "careful", "chance", "return", "likely"), result);
+    }
+
+    @Test
+    void suggestNewWords_AppliesLimitsForCurrentLearningWordsCount() {
+        // Given
+        ChatGPTResponse response = new ChatGPTResponse();
+        ChatGPTResponse.Choice choice = new ChatGPTResponse.Choice();
+        ChatGPTResponse.Message message = new ChatGPTResponse.Message();
+        message.setContent("""
+                {"easier":["easy-one","easy-two","easy-three"],"same":["same-one","same-two","same-three"],"harder":["hard-one","hard-two","hard-three"]}
+                """);
+        choice.setMessage(message);
+        choice.setFinish_reason("stop");
+        response.setChoices(List.of(choice));
+
+        when(chatGPTClient.generateResponse(any()))
+                .thenReturn(ResponseEntity.ok(response));
+
+        Set<String> learningWords = Set.of(
+                "one", "two", "three", "four", "five",
+                "six", "seven", "eight", "nine", "ten"
+        );
+
+        // When
+        Set<String> result = chatGPTService.suggestNewWords(Set.of("known"), learningWords);
+
+        // Then
+        assertEquals(Set.of("easy-one", "easy-two", "same-one", "same-two", "hard-one", "hard-two", "hard-three"), result);
     }
 
     @Test

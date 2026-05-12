@@ -124,19 +124,35 @@ public class ChatGPTService {
             String content = choice.getMessage().getContent();
             log.info("Response: {}", content);
             WordsResponse wordsResponse = objectMapper.readValue(content, WordsResponse.class);
+            WordSuggestionLimits.GroupLimits limits = WordSuggestionLimits
+                    .forLearningWordsCount(learningWords == null ? 0 : learningWords.size())
+                    .chatGpt();
 
             Set<String> excludedWords = Stream.concat(normalizedKnownWords.stream(), normalizedLearningWords.stream())
                     .collect(Collectors.toSet());
-            return wordsResponse.getWords().stream()
-                    .map(ChatGPTService::normalizeWord)
-                    .filter(word -> !word.isBlank())
-                    .filter(word -> !excludedWords.contains(word))
-                    .filter(ChatGPTService::isSingleWord)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            Set<String> suggestions = new LinkedHashSet<>();
+            suggestions.addAll(filterWords(wordsResponse.getEasier(), excludedWords, limits.easier()));
+            suggestions.addAll(filterWords(wordsResponse.getSame(), excludedWords, limits.same()));
+            suggestions.addAll(filterWords(wordsResponse.getHarder(), excludedWords, limits.harder()));
+            return suggestions;
         } catch (Exception e) {
             log.error("Error while getting word suggestions from ChatGPT", e);
             return Collections.emptySet();
         }
+    }
+
+    private static List<String> filterWords(List<String> words, Set<String> excludedWords, int limit) {
+        if (words == null || words.isEmpty() || limit <= 0) {
+            return Collections.emptyList();
+        }
+        return words.stream()
+                    .map(ChatGPTService::normalizeWord)
+                    .filter(word -> !word.isBlank())
+                    .filter(word -> !excludedWords.contains(word))
+                    .filter(ChatGPTService::isSingleWord)
+                    .distinct()
+                    .limit(limit)
+                    .toList();
     }
 
     private static Set<String> normalizeWords(Set<String> words) {
