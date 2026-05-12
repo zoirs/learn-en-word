@@ -35,8 +35,8 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
     @Query("""
        SELECT m
        FROM MeaningEntity m
-       WHERE m.text = :text AND m.frequencyPercent IS NOT NULL
-       ORDER BY m.frequencyPercent DESC
+       WHERE m.text = :text AND m.popularity IS NOT NULL
+       ORDER BY m.popularity DESC
        """)
     List<MeaningEntity> findByText(String text);
 
@@ -44,9 +44,9 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
             SELECT DISTINCT ON (m.text) m.*
             FROM meanings m
             WHERE m.text IN (:texts)
-              AND m.frequency_percent IS NOT NULL
-              AND m.frequency_percent = (
-                  SELECT MAX(m2.frequency_percent)
+              AND m.popularity IS NOT NULL
+              AND m.popularity = (
+                  SELECT MAX(m2.popularity)
                   FROM meanings m2
                   WHERE m2.text = m.text
               )
@@ -61,17 +61,16 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
 
     @Query(value = """
             WITH candidate_meanings AS (
-                SELECT m.id, m.word_id, m.difficulty_level, m.text, m.popularity, m.frequency_percent
+                SELECT m.id, m.word_id, m.difficulty_level, m.text, m.popularity
                 FROM meanings m
                 WHERE m.external_id NOT IN (:excludedExternalIds)
                   AND LOWER(m.text) NOT IN (:excludedTexts)
                   AND m.text IS NOT NULL
                   AND LENGTH(BTRIM(m.text)) < :maxTextLengthExclusive
                   AND m.part_of_speech_code IN ('j', 'n', 'r', 'v')
-                  AND m.frequency_percent IS NOT NULL
+                  AND m.popularity IS NOT NULL
                   AND m.wordfreq_frequency > 0
                   AND m.popularity >= :minPopularity
-                  AND m.is_valid = true
                   AND EXISTS (
                       SELECT 1
                       FROM examples e
@@ -87,7 +86,7 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
                            cm.difficulty_level,
                            ROW_NUMBER() OVER (
                                PARTITION BY cm.word_id
-                               ORDER BY cm.popularity DESC, cm.frequency_percent DESC, RANDOM()
+                               ORDER BY cm.popularity DESC, RANDOM()
                    ) AS word_rank
                     FROM candidate_meanings cm
                 ) ranked_word_meanings
