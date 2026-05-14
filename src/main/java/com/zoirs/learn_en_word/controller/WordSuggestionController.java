@@ -45,6 +45,8 @@ public class WordSuggestionController {
     public ResponseEntity<List<Meaning>> getWordSuggestions(
             @RequestBody State state
     ) {
+        log.info("For userId {}: knownWords={}, learningWords={}",
+                state.getUserId(), state.getKnownWords().size(), state.getLearningWords().size());
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
