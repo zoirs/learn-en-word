@@ -95,7 +95,7 @@ public class UserService {
                 user.setTimezoneOffset(timezoneOffset);
                 isNeedSave = true;
             }
-            if (dailyNotifications != user.getDailyNotifications()) {
+            if (!Integer.valueOf(dailyNotifications).equals(user.getDailyNotifications())) {
                 user.setDailyNotifications(dailyNotifications);
                 isNeedSave = true;
             }
