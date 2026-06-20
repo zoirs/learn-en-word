@@ -1,14 +1,14 @@
 package com.zoirs.learn_en_word.service;
 
-import com.google.common.base.MoreObjects;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import com.zoirs.learn_en_word.entity.User;
-import com.zoirs.learn_en_word.model.ExampleEntity;
+import com.zoirs.learn_en_word.entity.UserProgressSyncSnapshot;
 import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.model.TranslationEntity;
 import com.zoirs.learn_en_word.repository.MeaningRepository;
+import com.zoirs.learn_en_word.repository.UserProgressSyncSnapshotRepository;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -19,9 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
+import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -33,6 +32,8 @@ public class NotificationService {
     private UserRepository userRepository;
     @Autowired
     private MeaningRepository meaningRepository;
+    @Autowired
+    private UserProgressSyncSnapshotRepository userProgressSyncSnapshotRepository;
 
     public void sendNotification(String token, String title, String body) throws Exception {
         Message message = Message.builder()
@@ -50,11 +51,23 @@ public class NotificationService {
     @Scheduled(cron = "0 0 10-22 * * *")
     @Transactional
     public void sendHourlyQuizzes() {
-        List<User> users = userRepository.findAll();
+        OffsetDateTime activeSince = OffsetDateTime.now().minusWeeks(2);
+        log.info("Started hourly quiz notification job, activeSince={}", activeSince);
+
+        List<String> activeUserIds = userProgressSyncSnapshotRepository.findBySyncedAtGreaterThanEqual(activeSince)
+                .stream()
+                .map(UserProgressSyncSnapshot::getUserId)
+                .toList();
+        List<User> users = userRepository.findAllById(activeUserIds);
+
+        int sentCount = 0;
+        int skippedCount = 0;
+        int errorCount = 0;
         for (User user : users) {
             if (StringUtils.isEmpty(user.getFirebaseToken())
                     || CollectionUtils.isEmpty(user.getNewWords())
                     || CollectionUtils.isEmpty(user.getLearningWords())) {
+                skippedCount++;
                 continue;
             }
             List<Integer> ids = user.getLearningWords().stream()
@@ -63,6 +76,7 @@ public class NotificationService {
                     .toList();
             List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
             if (meanings.isEmpty()) {
+                skippedCount++;
                 continue;
             }
             log.info("Sending notification to user: {} {}", user.getId(), user.getUsername());
@@ -83,7 +97,9 @@ public class NotificationService {
                 String title = "Время повторить слова";
 
                 sendNotification(user.getFirebaseToken(), title, body);
+                sentCount++;
             } catch (Exception e) {
+                errorCount++;
                 if (e.toString().contains("Requested entity was not found")) {
                     log.error("Error sending notification to user: {} {}", user.getId(), e.toString());
                 } else {
@@ -91,5 +107,7 @@ public class NotificationService {
                 }
             }
         }
+        log.info("Finished hourly quiz notification job, activeSnapshots={}, activeUsers={}, sent={}, skipped={}, errors={}",
+                activeUserIds.size(), users.size(), sentCount, skippedCount, errorCount);
     }
 }
