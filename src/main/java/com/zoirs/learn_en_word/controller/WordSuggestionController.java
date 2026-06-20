@@ -47,11 +47,6 @@ public class WordSuggestionController {
     ) {
         log.info("For userId {}: knownWords={}, learningWords={}",
                 state.getUserId(), state.getKnownWords().size(), state.getLearningWords().size());
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            log.error("InterruptedException", e);
-        }
         List<Integer> ids = new ArrayList<>();
         ids.addAll(state.getKnownWords());
         ids.addAll(state.getLearningWords());
