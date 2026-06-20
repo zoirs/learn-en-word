@@ -107,6 +107,7 @@ public class UserService {
             newUser.setId(id);
             newUser.setUsername(id);
             newUser.setFirebaseToken(fireBaseToken);
+            newUser.setTimezoneOffset(timezoneOffset);
             newUser.setDailyNotifications(dailyNotifications);
             userRepository.save(newUser);
         }

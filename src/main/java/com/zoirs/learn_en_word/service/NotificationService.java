@@ -19,15 +19,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
 public class NotificationService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+    private static final int DEFAULT_DAILY_NOTIFICATIONS = 3;
+    private static final int NOTIFICATION_START_HOUR = 10;
+    private static final int NOTIFICATION_END_HOUR = 21;
+    private final Map<String, DailyNotificationCounter> dailyNotificationCounters = new ConcurrentHashMap<>();
+
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -48,7 +59,7 @@ public class NotificationService {
         log.info("Notification sent: {}", response);
     }
 
-    @Scheduled(cron = "0 0 10-22 * * *")
+    @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public void sendHourlyQuizzes() {
         OffsetDateTime activeSince = OffsetDateTime.now().minusWeeks(2);
@@ -61,13 +72,18 @@ public class NotificationService {
         List<User> users = userRepository.findAllById(activeUserIds);
 
         int sentCount = 0;
-        int skippedCount = 0;
         int errorCount = 0;
         for (User user : users) {
             if (StringUtils.isEmpty(user.getFirebaseToken())
                     || CollectionUtils.isEmpty(user.getNewWords())
                     || CollectionUtils.isEmpty(user.getLearningWords())) {
-                skippedCount++;
+                continue;
+            }
+            int dailyNotificationLimit = resolveDailyNotificationLimit(user);
+            if (dailyNotificationLimit <= 0 || isDailyNotificationLimitReached(user, dailyNotificationLimit)) {
+                continue;
+            }
+            if (!isNotificationHour(user, dailyNotificationLimit)) {
                 continue;
             }
             List<Integer> ids = user.getLearningWords().stream()
@@ -76,7 +92,6 @@ public class NotificationService {
                     .toList();
             List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
             if (meanings.isEmpty()) {
-                skippedCount++;
                 continue;
             }
             log.info("Sending notification to user: {} {}", user.getId(), user.getUsername());
@@ -97,6 +112,7 @@ public class NotificationService {
                 String title = "Время повторить слова";
 
                 sendNotification(user.getFirebaseToken(), title, body);
+                incrementDailyNotificationCount(user);
                 sentCount++;
             } catch (Exception e) {
                 errorCount++;
@@ -107,7 +123,65 @@ public class NotificationService {
                 }
             }
         }
-        log.info("Finished hourly quiz notification job, activeSnapshots={}, activeUsers={}, sent={}, skipped={}, errors={}",
-                activeUserIds.size(), users.size(), sentCount, skippedCount, errorCount);
+        log.info("Finished hourly quiz notification job, sent={}, errors={}", sentCount, errorCount);
+    }
+
+    private int resolveDailyNotificationLimit(User user) {
+        return user.getDailyNotifications() == null ? DEFAULT_DAILY_NOTIFICATIONS : user.getDailyNotifications();
+    }
+
+    private boolean isNotificationHour(User user, int dailyNotificationLimit) {
+        int localHour = getUserLocalDateTime(user).getHour();
+        return getDailyNotificationHours(dailyNotificationLimit).contains(localHour);
+    }
+
+    private Set<Integer> getDailyNotificationHours(int dailyNotificationLimit) {
+        int windowHours = NOTIFICATION_END_HOUR - NOTIFICATION_START_HOUR + 1;
+        int notificationsCount = Math.min(dailyNotificationLimit, windowHours);
+        Set<Integer> hours = new LinkedHashSet<>();
+        if (notificationsCount <= 0) {
+            return hours;
+        }
+        if (notificationsCount == 1) {
+            hours.add((NOTIFICATION_START_HOUR + NOTIFICATION_END_HOUR) / 2);
+            return hours;
+        }
+        for (int i = 0; i < notificationsCount; i++) {
+            int hour = NOTIFICATION_START_HOUR
+                    + (int) Math.round((double) (NOTIFICATION_END_HOUR - NOTIFICATION_START_HOUR) * i / (notificationsCount - 1));
+            hours.add(hour);
+        }
+        return hours;
+    }
+
+    private boolean isDailyNotificationLimitReached(User user, int dailyNotificationLimit) {
+        DailyNotificationCounter counter = dailyNotificationCounters.get(user.getId());
+        LocalDate today = getUserLocalDate(user);
+        return counter != null && counter.date.equals(today) && counter.count >= dailyNotificationLimit;
+    }
+
+    private void incrementDailyNotificationCount(User user) {
+        LocalDate today = getUserLocalDate(user);
+        dailyNotificationCounters.compute(user.getId(), (userId, counter) -> {
+            if (counter == null || !counter.date.equals(today)) {
+                return new DailyNotificationCounter(today, 1);
+            }
+            return new DailyNotificationCounter(today, counter.count + 1);
+        });
+    }
+
+    private LocalDate getUserLocalDate(User user) {
+        return getUserLocalDateTime(user).toLocalDate();
+    }
+
+    private OffsetDateTime getUserLocalDateTime(User user) {
+        Integer timezoneOffset = user.getTimezoneOffset();
+        if (timezoneOffset == null) {
+            return OffsetDateTime.now();
+        }
+        return OffsetDateTime.now(ZoneOffset.ofHours(timezoneOffset));
+    }
+
+    private record DailyNotificationCounter(LocalDate date, int count) {
     }
 }
