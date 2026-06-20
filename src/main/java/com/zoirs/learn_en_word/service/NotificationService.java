@@ -52,7 +52,9 @@ public class NotificationService {
     public void sendHourlyQuizzes() {
         List<User> users = userRepository.findAll();
         for (User user : users) {
-            if (StringUtils.isEmpty(user.getFirebaseToken()) || CollectionUtils.isEmpty(user.getNewWords())) {
+            if (StringUtils.isEmpty(user.getFirebaseToken())
+                    || CollectionUtils.isEmpty(user.getNewWords())
+                    || CollectionUtils.isEmpty(user.getLearningWords())) {
                 continue;
             }
             List<Integer> ids = user.getLearningWords().stream()
