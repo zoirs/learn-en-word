@@ -6,6 +6,9 @@ public final class WordSuggestionLimits {
     }
 
     public static Limits forLearningWordsCount(int learningWordsCount) {
+        if (learningWordsCount < 5) {
+            return new Limits(new GroupLimits(2, 3, 4), new GroupLimits(2, 6, 7));
+        }
         if (learningWordsCount < 10) {
             return new Limits(new GroupLimits(1, 2, 3), new GroupLimits(1, 5, 6));
         }
