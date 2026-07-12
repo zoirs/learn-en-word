@@ -61,8 +61,10 @@ public class DatabaseWordSuggestionService {
                 .collect(Collectors.toSet());
 
         if (!requestedPhraseCodes.isEmpty() && !searchableLearningWordIds.isEmpty()) {
-            suggestions.addAll(toExternalIds(meaningRepository.findPhrasesForLearningWords(
-                    searchableLearningWordIds, excludedExternalIds, requestedPhraseCodes)));
+            List<MeaningEntity> phrases = meaningRepository.findPhrasesForLearningWords(
+                    searchableLearningWordIds, excludedExternalIds, requestedPhraseCodes);
+            suggestions.addAll(toExternalIds(phrases));
+            log.info("Database phrase suggestions: {}", toLogWords(phrases));
         }
 
         Integer currentLevel = calculateCurrentLevel(currentMeanings, learningWordIds);

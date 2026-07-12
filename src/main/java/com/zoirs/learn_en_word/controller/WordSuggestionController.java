@@ -1,9 +1,6 @@
 package com.zoirs.learn_en_word.controller;
 
 import com.zoirs.learn_en_word.api.dto.skyeng.Meaning;
-import com.zoirs.learn_en_word.model.MeaningEntity;
-import com.zoirs.learn_en_word.repository.MeaningRepository;
-import com.zoirs.learn_en_word.service.ChatGPTService;
 import com.zoirs.learn_en_word.service.DatabaseWordSuggestionService;
 import com.zoirs.learn_en_word.service.DictionaryCacheService;
 import com.zoirs.learn_en_word.service.UserService;
@@ -19,9 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,11 +27,9 @@ import java.util.stream.Collectors;
 public class WordSuggestionController {
 
     private static final Logger log = LoggerFactory.getLogger(WordSuggestionController.class);
-    private final ChatGPTService chatGPTService;
     private final DatabaseWordSuggestionService databaseWordSuggestionService;
     private final UserService userService;
     private final DictionaryCacheService dictionaryCacheService;
-    private final MeaningRepository meaningRepository;
 
     // используется
     @PostMapping("/post")
@@ -45,39 +38,15 @@ public class WordSuggestionController {
     public ResponseEntity<List<Meaning>> getWordSuggestions(
             @RequestBody State state
     ) {
-        log.info("For userId {}: knownWords={}, learningWords={}",
-                state.getUserId(), state.getKnownWords().size(), state.getLearningWords().size());
-        List<Integer> ids = new ArrayList<>();
-        ids.addAll(state.getKnownWords());
-        ids.addAll(state.getLearningWords());
-        List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
-        Set<String> searchablePartOfSpeechCodes = Set.of("j", "n", "r", "v");
-        Set<String> knownWords = meanings.stream()
-                .filter(q -> searchablePartOfSpeechCodes.contains(q.getPartOfSpeechCode()))
-                .filter(q -> state.getKnownWords().contains(q.getExternalId()))
-                .map(MeaningEntity::getText)
-                .collect(Collectors.toSet());
-        Set<String> learningWords = meanings.stream()
-                .filter(q -> searchablePartOfSpeechCodes.contains(q.getPartOfSpeechCode()))
-                .filter(q -> state.getLearningWords().contains(q.getExternalId()))
-                .map(MeaningEntity::getText)
-                .collect(Collectors.toSet());
-        Set<String> aiWords = chatGPTService.suggestNewWords(knownWords, learningWords);
-        Set<Integer> dbWordIds = databaseWordSuggestionService.suggestNewWords(
+        log.info("For userId {}: knownWords={}, learningWords={}, req={}",
+                state.getUserId(), state.getKnownWords().size(), state.getLearningWords().size(), state.getPartOfSpeechCodes());
+        Set<Integer> suggestions = databaseWordSuggestionService.suggestNewWords(
                 state.getKnownWords(), state.getLearningWords(), state.getPartOfSpeechCodes());
-        if (aiWords.isEmpty() && dbWordIds.isEmpty()) {
+        if (suggestions.isEmpty()) {
             log.info("No new words suggested for userId {}", state.getUserId());
             return ResponseEntity.noContent().build();
         }
-        Map<Integer, Meaning> resultById = new LinkedHashMap<>();
-        if (!aiWords.isEmpty()) {
-            dictionaryCacheService.searchWords(aiWords).forEach(meaning -> resultById.put(meaning.getId(), meaning));
-        }
-        if (!dbWordIds.isEmpty()) {
-            dictionaryCacheService.getMeanings(new ArrayList<>(dbWordIds))
-                    .forEach(meaning -> resultById.put(meaning.getId(), meaning));
-        }
-        List<Meaning> result = new ArrayList<>(resultById.values());
+        List<Meaning> result = dictionaryCacheService.getMeanings(new ArrayList<>(suggestions));
 
         Set<Integer> newWords = result.stream().map(Meaning::getId).collect(Collectors.toSet());
         log.info("New words for userId {}: {}", state.getUserId(), newWords);
