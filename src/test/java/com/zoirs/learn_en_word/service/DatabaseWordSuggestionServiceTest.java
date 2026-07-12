@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -101,8 +102,39 @@ class DatabaseWordSuggestionServiceTest {
         assertEquals(Set.of(10), result);
     }
 
+    @Test
+    void suggestNewWords_FiltersCurrentMeaningsAndAddsRequestedPhrases() {
+        when(meaningRepository.findByExternalIdIn(anyList()))
+                .thenReturn(List.of(
+                        meaning(1, "known", 2, "n"),
+                        meaning(2, "learn", 2, "v"),
+                        meaning(3, "ignored phrase", 5, "ph")
+                ));
+        when(meaningRepository.findPhrasesForLearningWords(eq(Set.of(2)), eq(Set.of(1, 2, 3)), eq(Set.of("ph", "phi"))))
+                .thenReturn(List.of(meaning(20, "learn by heart", 2, "ph")));
+        when(meaningRepository.findSuggestionsByDifficultyLevel(eq(1), anySet(), anySet(), anyDouble(), eq(20), eq(2)))
+                .thenReturn(List.of());
+        when(meaningRepository.findSuggestionsByDifficultyLevel(eq(2), anySet(), anySet(), anyDouble(), eq(20), eq(3)))
+                .thenReturn(List.of());
+        when(meaningRepository.findSuggestionsByDifficultyLevel(eq(3), anySet(), anySet(), anyDouble(), eq(20), eq(4)))
+                .thenReturn(List.of());
+
+        Set<Integer> result = databaseWordSuggestionService.suggestNewWords(
+                Set.of(1), Set.of(2, 3), Set.of("ph", "phi"));
+
+        assertEquals(Set.of(20), result);
+        verify(meaningRepository).findPhrasesForLearningWords(
+                Set.of(2), Set.of(1, 2, 3), Set.of("ph", "phi"));
+    }
+
     private MeaningEntity meaning(Integer externalId, String text, Integer difficultyLevel) {
-        return meaning(externalId, text, difficultyLevel, 0.000001d, 3.0d, 0.000001d);
+        return meaning(externalId, text, difficultyLevel, "n");
+    }
+
+    private MeaningEntity meaning(Integer externalId, String text, Integer difficultyLevel, String partOfSpeechCode) {
+        MeaningEntity meaning = meaning(externalId, text, difficultyLevel, 0.000001d, 3.0d, 0.000001d);
+        meaning.setPartOfSpeechCode(partOfSpeechCode);
+        return meaning;
     }
 
     private MeaningEntity meaning(
@@ -117,6 +149,7 @@ class DatabaseWordSuggestionServiceTest {
         meaning.setExternalId(externalId);
         meaning.setText(text);
         meaning.setDifficultyLevel(difficultyLevel);
+        meaning.setPartOfSpeechCode("n");
         meaning.setWordfreqFrequency(wordfreqFrequency);
         meaning.setWordfreqZipf(wordfreqZipf);
         meaning.setWordfreqMinFrequency(wordfreqMinFrequency);

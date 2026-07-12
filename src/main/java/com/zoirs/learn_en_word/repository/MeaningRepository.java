@@ -107,6 +107,82 @@ public interface MeaningRepository extends JpaRepository<MeaningEntity, Integer>
             @Param("maxTextLengthExclusive") int maxTextLengthExclusive,
             @Param("limit") int limit
     );
+
+    @Query(value = """
+            WITH learning_words AS (
+                SELECT DISTINCT LOWER(BTRIM(m.text)) AS word
+                FROM meanings m
+                WHERE m.external_id IN (:learningExternalIds)
+                  AND m.part_of_speech_code IN ('j', 'n', 'r', 'v')
+                  AND m.text IS NOT NULL
+                  AND BTRIM(m.text) <> ''
+            ),
+            phrase_candidates AS (
+                SELECT m.external_id,
+                       LOWER(m.text) AS normalized_text,
+                       CASE
+                           WHEN JSONB_TYPEOF(m.wordfreq_tokens) = 'array'
+                           THEN JSONB_ARRAY_LENGTH(m.wordfreq_tokens)
+                       END AS token_count,
+                       m.popularity
+                FROM meanings m
+                WHERE m.external_id IS NOT NULL
+                  AND m.external_id NOT IN (:excludedExternalIds)
+                  AND m.part_of_speech_code IN (:phrasePartOfSpeechCodes)
+                  AND JSONB_TYPEOF(m.wordfreq_tokens) = 'array'
+            ),
+            phrases_by_word AS (
+                SELECT first_phrase.external_id AS first_phrase_id,
+                       second_phrase.external_id AS second_phrase_id,
+                       third_phrase.external_id AS third_phrase_id
+                FROM learning_words lw
+                LEFT JOIN LATERAL (
+                    SELECT pc.external_id
+                    FROM phrase_candidates pc
+                    WHERE POSITION(lw.word IN pc.normalized_text) > 0
+                      AND pc.token_count BETWEEN 2 AND 3
+                    ORDER BY pc.popularity DESC NULLS LAST, RANDOM()
+                    LIMIT 1
+                ) first_phrase ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT pc.external_id
+                    FROM phrase_candidates pc
+                    WHERE POSITION(lw.word IN pc.normalized_text) > 0
+                      AND pc.token_count BETWEEN 3 AND 4
+                      AND (first_phrase.external_id IS NULL OR pc.external_id <> first_phrase.external_id)
+                    ORDER BY pc.popularity DESC NULLS LAST, RANDOM()
+                    LIMIT 1
+                ) second_phrase ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT pc.external_id
+                    FROM phrase_candidates pc
+                    WHERE POSITION(lw.word IN pc.normalized_text) > 0
+                      AND pc.token_count BETWEEN 5 AND 6
+                      AND (first_phrase.external_id IS NULL OR pc.external_id <> first_phrase.external_id)
+                      AND (second_phrase.external_id IS NULL OR pc.external_id <> second_phrase.external_id)
+                    ORDER BY pc.popularity DESC NULLS LAST, RANDOM()
+                    LIMIT 1
+                ) third_phrase ON TRUE
+            ),
+            phrase_ids AS (
+                SELECT DISTINCT phrase_id AS external_id
+                FROM phrases_by_word
+                CROSS JOIN LATERAL (VALUES
+                    (first_phrase_id),
+                    (second_phrase_id),
+                    (third_phrase_id)
+                ) selected_phrases(phrase_id)
+                WHERE phrase_id IS NOT NULL
+            )
+            SELECT m.*
+            FROM meanings m
+            WHERE m.external_id IN (SELECT external_id FROM phrase_ids)
+            """, nativeQuery = true)
+    List<MeaningEntity> findPhrasesForLearningWords(
+            @Param("learningExternalIds") Set<Integer> learningExternalIds,
+            @Param("excludedExternalIds") Set<Integer> excludedExternalIds,
+            @Param("phrasePartOfSpeechCodes") Set<String> phrasePartOfSpeechCodes
+    );
     
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     boolean existsByExternalId(Integer externalId);

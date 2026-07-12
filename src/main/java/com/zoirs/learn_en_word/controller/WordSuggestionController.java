@@ -51,10 +51,20 @@ public class WordSuggestionController {
         ids.addAll(state.getKnownWords());
         ids.addAll(state.getLearningWords());
         List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
-        Set<String> knownWords = meanings.stream().filter(q -> state.getKnownWords().contains(q.getExternalId())).map(MeaningEntity::getText).collect(Collectors.toSet());
-        Set<String> learningWords = meanings.stream().filter(q -> state.getLearningWords().contains(q.getExternalId())).map(MeaningEntity::getText).collect(Collectors.toSet());
+        Set<String> searchablePartOfSpeechCodes = Set.of("j", "n", "r", "v");
+        Set<String> knownWords = meanings.stream()
+                .filter(q -> searchablePartOfSpeechCodes.contains(q.getPartOfSpeechCode()))
+                .filter(q -> state.getKnownWords().contains(q.getExternalId()))
+                .map(MeaningEntity::getText)
+                .collect(Collectors.toSet());
+        Set<String> learningWords = meanings.stream()
+                .filter(q -> searchablePartOfSpeechCodes.contains(q.getPartOfSpeechCode()))
+                .filter(q -> state.getLearningWords().contains(q.getExternalId()))
+                .map(MeaningEntity::getText)
+                .collect(Collectors.toSet());
         Set<String> aiWords = chatGPTService.suggestNewWords(knownWords, learningWords);
-        Set<Integer> dbWordIds = databaseWordSuggestionService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
+        Set<Integer> dbWordIds = databaseWordSuggestionService.suggestNewWords(
+                state.getKnownWords(), state.getLearningWords(), state.getPartOfSpeechCodes());
         if (aiWords.isEmpty() && dbWordIds.isEmpty()) {
             log.info("No new words suggested for userId {}", state.getUserId());
             return ResponseEntity.noContent().build();
@@ -81,7 +91,8 @@ public class WordSuggestionController {
     public ResponseEntity<List<Meaning>> getDatabaseWordSuggestions(
             @RequestBody State state
     ) {
-        Set<Integer> suggestions = databaseWordSuggestionService.suggestNewWords(state.getKnownWords(), state.getLearningWords());
+        Set<Integer> suggestions = databaseWordSuggestionService.suggestNewWords(
+                state.getKnownWords(), state.getLearningWords(), state.getPartOfSpeechCodes());
         if (suggestions.isEmpty()) {
             return ResponseEntity.noContent().build();
         }

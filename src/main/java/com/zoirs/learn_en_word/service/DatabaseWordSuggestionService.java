@@ -23,13 +23,22 @@ public class DatabaseWordSuggestionService {
 
     private static final int MAX_TEXT_LENGTH_EXCLUSIVE = 20;
     private static final double MIN_POPULARITY = 1d;
+    private static final Set<String> SEARCHABLE_PART_OF_SPEECH_CODES = Set.of("j", "n", "r", "v");
+    private static final Set<String> PHRASE_PART_OF_SPEECH_CODES = Set.of("ph", "phi");
 
     private final MeaningRepository meaningRepository;
 
     public Set<Integer> suggestNewWords(Set<Integer> knownWords, Set<Integer> learningWords) {
+        return suggestNewWords(knownWords, learningWords, SEARCHABLE_PART_OF_SPEECH_CODES);
+    }
+
+    public Set<Integer> suggestNewWords(
+            Set<Integer> knownWords,
+            Set<Integer> learningWords,
+            Set<String> requestedPartOfSpeechCodes
+    ) {
         Set<Integer> knownWordIds = normalizeIds(knownWords);
         Set<Integer> learningWordIds = normalizeIds(learningWords);
-        int learningWordsCount = learningWords == null ? 0 : learningWords.size();
         Set<Integer> excludedExternalIds = Stream.concat(knownWordIds.stream(), learningWordIds.stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -38,14 +47,31 @@ public class DatabaseWordSuggestionService {
             return Collections.emptySet();
         }
 
-        List<MeaningEntity> currentMeanings = meaningRepository.findByExternalIdIn(new ArrayList<>(excludedExternalIds));
+        List<MeaningEntity> allCurrentMeanings = meaningRepository.findByExternalIdIn(new ArrayList<>(excludedExternalIds));
+        List<MeaningEntity> currentMeanings = allCurrentMeanings.stream()
+                .filter(meaning -> SEARCHABLE_PART_OF_SPEECH_CODES.contains(meaning.getPartOfSpeechCode()))
+                .toList();
+        Set<Integer> searchableLearningWordIds = currentMeanings.stream()
+                .filter(meaning -> learningWordIds.contains(meaning.getExternalId()))
+                .map(MeaningEntity::getExternalId)
+                .collect(Collectors.toSet());
+        Set<Integer> suggestions = new LinkedHashSet<>();
+        Set<String> requestedPhraseCodes = normalizePartOfSpeechCodes(requestedPartOfSpeechCodes).stream()
+                .filter(PHRASE_PART_OF_SPEECH_CODES::contains)
+                .collect(Collectors.toSet());
+
+        if (!requestedPhraseCodes.isEmpty() && !searchableLearningWordIds.isEmpty()) {
+            suggestions.addAll(toExternalIds(meaningRepository.findPhrasesForLearningWords(
+                    searchableLearningWordIds, excludedExternalIds, requestedPhraseCodes)));
+        }
+
         Integer currentLevel = calculateCurrentLevel(currentMeanings, learningWordIds);
         if (currentLevel == null) {
             log.info("Skipping database word suggestions because current difficulty level cannot be calculated");
-            return Collections.emptySet();
+            return suggestions;
         }
         WordSuggestionLimits.GroupLimits limits = WordSuggestionLimits
-                .forLearningWordsCount(learningWordsCount)
+                .forLearningWordsCount(searchableLearningWordIds.size())
                 .database();
 
         Set<String> excludedTexts = currentMeanings.stream()
@@ -60,7 +86,6 @@ public class DatabaseWordSuggestionService {
         List<MeaningEntity> same = findWordsByLevel(currentLevel, excludedExternalIds, excludedTexts, limits.same());
         List<MeaningEntity> harder = findWordsByLevel(currentLevel + 1, excludedExternalIds, excludedTexts, limits.harder());
 
-        Set<Integer> suggestions = new LinkedHashSet<>();
         suggestions.addAll(toExternalIds(easier));
         suggestions.addAll(toExternalIds(same));
         suggestions.addAll(toExternalIds(harder));
@@ -147,5 +172,15 @@ public class DatabaseWordSuggestionService {
         return ids.stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private Set<String> normalizePartOfSpeechCodes(Set<String> partOfSpeechCodes) {
+        if (partOfSpeechCodes == null) {
+            return SEARCHABLE_PART_OF_SPEECH_CODES;
+        }
+        return partOfSpeechCodes.stream()
+                .filter(Objects::nonNull)
+                .map(code -> code.trim().toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
     }
 }
