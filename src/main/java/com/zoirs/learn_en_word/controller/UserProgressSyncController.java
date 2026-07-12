@@ -28,7 +28,8 @@ public class UserProgressSyncController {
     @PostMapping("/sync")
     @Operation(summary = "Sync user progress snapshot")
     public ResponseEntity<UserProgressSyncResponse> sync(@RequestBody UserProgressSyncReq req) {
-        return ResponseEntity.ok(userProgressSyncService.sync(req));
+        UserProgressSyncResponse response = userProgressSyncService.sync(req);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/sync/{userId}")

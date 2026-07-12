@@ -1,5 +1,6 @@
 package com.zoirs.learn_en_word.service;
 
+import com.google.common.base.MoreObjects;
 import com.zoirs.learn_en_word.entity.SubscriptionPaymentType;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.repository.UserRepository;
@@ -37,7 +38,7 @@ public class UserService {
             newUser.setId(id);
         }
         newUser.setEmail(email);
-        newUser.setUsername(email);
+        newUser.setUsername(MoreObjects.firstNonNull(email, id));
         return userRepository.save(newUser);
     }
 
