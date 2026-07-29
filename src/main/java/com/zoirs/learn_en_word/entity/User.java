@@ -9,6 +9,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +34,9 @@ public class User {
 
     private Integer timezoneOffset;
     private Integer dailyNotifications;
+
+    @Column(name = "created_at", updatable = false)
+    private OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "integer[]")
