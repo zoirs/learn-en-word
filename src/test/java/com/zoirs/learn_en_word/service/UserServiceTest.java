@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,5 +51,6 @@ class UserServiceTest {
         assertEquals("firebase-token", savedUser.getFirebaseToken());
         assertEquals(3, savedUser.getTimezoneOffset());
         assertEquals(5, savedUser.getDailyNotifications());
+        assertNotNull(savedUser.getCreatedAt());
     }
 }

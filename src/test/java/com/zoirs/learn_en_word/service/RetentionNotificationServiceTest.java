@@ -116,6 +116,7 @@ class RetentionNotificationServiceTest {
     @Test
     void wasCreatedBeforeTodayAcceptsLegacyUserWithoutCreationDate() {
         User user = new User();
+        user.setCreatedAt(null);
 
         assertTrue(retentionNotificationService.wasCreatedBeforeToday(user));
     }
