@@ -19,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -30,7 +31,7 @@ public class RetentionNotificationService {
     private static final Logger log = LoggerFactory.getLogger(RetentionNotificationService.class);
     private static final int EARLY_NOTIFICATION_HOUR = 18;
     private static final int LATE_NOTIFICATION_HOUR = 19;
-    private static final int DYNAMIC_NOTIFICATION_WORDS_COUNT = 3;
+    private static final int MAX_DYNAMIC_NOTIFICATION_WORDS_COUNT = 3;
     private static final List<NotificationContent> STATIC_NOTIFICATIONS = List.of(
             new NotificationContent(
                     "Английский за 2 минуты",
@@ -71,11 +72,7 @@ public class RetentionNotificationService {
         OffsetDateTime activeSince = OffsetDateTime.now().minusWeeks(2);
         log.info("Started retention notification job, activeSince={}", activeSince);
 
-        List<String> activeUserIds = userProgressSyncSnapshotRepository.findBySyncedAtGreaterThanEqual(activeSince)
-                .stream()
-                .map(UserProgressSyncSnapshot::getUserId)
-                .toList();
-        List<User> users = userRepository.findAllById(activeUserIds);
+        List<User> users = findNotificationCandidates(activeSince);
 
         int sentCount = 0;
         int errorCount = 0;
@@ -113,9 +110,22 @@ public class RetentionNotificationService {
         log.info("Finished retention notification job, sent={}, errors={}", sentCount, errorCount);
     }
 
+    List<User> findNotificationCandidates(OffsetDateTime activeSince) {
+        List<String> syncedUserIds = userProgressSyncSnapshotRepository.findBySyncedAtGreaterThanEqual(activeSince)
+                .stream()
+                .map(UserProgressSyncSnapshot::getUserId)
+                .toList();
+
+        Map<String, User> candidatesById = new LinkedHashMap<>();
+        userRepository.findAllById(syncedUserIds)
+                .forEach(user -> candidatesById.put(user.getId(), user));
+        userRepository.findRecentlyCreatedWithoutProgressSync(activeSince)
+                .forEach(user -> candidatesById.putIfAbsent(user.getId(), user));
+        return new ArrayList<>(candidatesById.values());
+    }
+
     private boolean isEligibleForNotification(User user) {
         return StringUtils.isNotEmpty(user.getFirebaseToken())
-                && !CollectionUtils.isEmpty(user.getLearningWords())
                 && isNotificationEnabled(user)
                 && wasCreatedBeforeToday(user)
                 && isNotificationTime(user)
@@ -153,22 +163,22 @@ public class RetentionNotificationService {
         return getUserLocalDateTime(user).toLocalDate().equals(lastNotificationDate);
     }
 
-    private List<String> getRandomLearningWords(User user) {
-        if (user.getLearningWords().size() < DYNAMIC_NOTIFICATION_WORDS_COUNT) {
+    List<String> getRandomLearningWords(User user) {
+        if (CollectionUtils.isEmpty(user.getLearningWords())) {
             return List.of();
         }
 
         List<Integer> learningWordIds = new ArrayList<>(user.getLearningWords());
         Collections.shuffle(learningWordIds, random);
         List<Integer> selectedIds = learningWordIds.stream()
-                .limit(DYNAMIC_NOTIFICATION_WORDS_COUNT)
+                .limit(MAX_DYNAMIC_NOTIFICATION_WORDS_COUNT)
                 .toList();
 
         return meaningRepository.findByExternalIdIn(selectedIds).stream()
                 .map(this::formatLearningWord)
                 .filter(StringUtils::isNotBlank)
                 .distinct()
-                .limit(DYNAMIC_NOTIFICATION_WORDS_COUNT)
+                .limit(MAX_DYNAMIC_NOTIFICATION_WORDS_COUNT)
                 .toList();
     }
 
@@ -189,10 +199,20 @@ public class RetentionNotificationService {
 
     List<NotificationContent> buildNotificationOptions(List<String> learningWords) {
         List<NotificationContent> notifications = new ArrayList<>(STATIC_NOTIFICATIONS);
-        if (learningWords.size() == DYNAMIC_NOTIFICATION_WORDS_COUNT) {
+        List<String> dynamicWords = CollectionUtils.isEmpty(learningWords)
+                ? List.of()
+                : learningWords.stream()
+                        .filter(StringUtils::isNotBlank)
+                        .distinct()
+                        .limit(MAX_DYNAMIC_NOTIFICATION_WORDS_COUNT)
+                        .toList();
+        if (!dynamicWords.isEmpty()) {
+            String body = dynamicWords.size() == 1
+                    ? "Слово " + dynamicWords.getFirst() + " пора повторить"
+                    : "Слова " + String.join(", ", dynamicWords) + ", которые пора повторить";
             notifications.add(new NotificationContent(
                     "Есть свободная минутка?",
-                    "Слова " + String.join(", ", learningWords) + ", которые пора повторить"
+                    body
             ));
         }
         return notifications;

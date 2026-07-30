@@ -1,6 +1,9 @@
 package com.zoirs.learn_en_word.service;
 
 import com.zoirs.learn_en_word.entity.User;
+import com.zoirs.learn_en_word.entity.UserProgressSyncSnapshot;
+import com.zoirs.learn_en_word.repository.UserProgressSyncSnapshotRepository;
+import com.zoirs.learn_en_word.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -13,6 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class RetentionNotificationServiceTest {
 
@@ -20,9 +26,9 @@ class RetentionNotificationServiceTest {
             new RetentionNotificationService(null, null, null, null);
 
     @Test
-    void buildNotificationOptionsWithoutThreeLearningWordsReturnsStaticOptions() {
+    void buildNotificationOptionsWithoutLearningWordsReturnsStaticOptions() {
         List<RetentionNotificationService.NotificationContent> options =
-                retentionNotificationService.buildNotificationOptions(List.of("apple", "table"));
+                retentionNotificationService.buildNotificationOptions(List.of());
 
         assertEquals(List.of(
                 new RetentionNotificationService.NotificationContent(
@@ -41,6 +47,36 @@ class RetentionNotificationServiceTest {
     }
 
     @Test
+    void buildNotificationOptionsWithOneLearningWordAddsSingularDynamicOption() {
+        List<RetentionNotificationService.NotificationContent> options =
+                retentionNotificationService.buildNotificationOptions(List.of("apple"));
+
+        assertEquals(4, options.size());
+        assertEquals(
+                new RetentionNotificationService.NotificationContent(
+                        "Есть свободная минутка?",
+                        "Слово apple, которое пора повторить"
+                ),
+                options.get(3)
+        );
+    }
+
+    @Test
+    void buildNotificationOptionsWithTwoLearningWordsAddsBothWords() {
+        List<RetentionNotificationService.NotificationContent> options =
+                retentionNotificationService.buildNotificationOptions(List.of("apple", "table"));
+
+        assertEquals(4, options.size());
+        assertEquals(
+                new RetentionNotificationService.NotificationContent(
+                        "Есть свободная минутка?",
+                        "Слова apple, table, которые пора повторить"
+                ),
+                options.get(3)
+        );
+    }
+
+    @Test
     void buildNotificationOptionsWithThreeLearningWordsAddsDynamicOption() {
         List<RetentionNotificationService.NotificationContent> options =
                 retentionNotificationService.buildNotificationOptions(List.of("apple", "table", "improve"));
@@ -53,6 +89,31 @@ class RetentionNotificationServiceTest {
                 ),
                 options.get(3)
         );
+    }
+
+    @Test
+    void buildNotificationOptionsWithMoreThanThreeLearningWordsUsesOnlyThree() {
+        List<RetentionNotificationService.NotificationContent> options =
+                retentionNotificationService.buildNotificationOptions(
+                        List.of("apple", "table", "improve", "window", "street", "water", "summer", "green")
+                );
+
+        assertEquals(4, options.size());
+        assertEquals(
+                new RetentionNotificationService.NotificationContent(
+                        "Есть свободная минутка?",
+                        "Слова apple, table, improve, которые пора повторить"
+                ),
+                options.get(3)
+        );
+    }
+
+    @Test
+    void getRandomLearningWordsWithoutWordsReturnsEmptyList() {
+        User user = new User();
+        user.setLearningWords(null);
+
+        assertEquals(List.of(), retentionNotificationService.getRandomLearningWords(user));
     }
 
     @Test
@@ -119,5 +180,41 @@ class RetentionNotificationServiceTest {
         user.setCreatedAt(null);
 
         assertTrue(retentionNotificationService.wasCreatedBeforeToday(user));
+    }
+
+    @Test
+    void findNotificationCandidatesIncludesSyncedAndRecentUnsyncedUsers() {
+        UserRepository userRepository = mock(UserRepository.class);
+        UserProgressSyncSnapshotRepository snapshotRepository =
+                mock(UserProgressSyncSnapshotRepository.class);
+        RetentionNotificationService service = new RetentionNotificationService(
+                null,
+                userRepository,
+                null,
+                snapshotRepository
+        );
+        OffsetDateTime activeSince = OffsetDateTime.parse("2026-07-16T12:00:00Z");
+
+        UserProgressSyncSnapshot snapshot = new UserProgressSyncSnapshot();
+        snapshot.setUserId("synced-user");
+        User syncedUser = new User();
+        syncedUser.setId("synced-user");
+        User recentUnsyncedUser = new User();
+        recentUnsyncedUser.setId("recent-unsynced-user");
+
+        when(snapshotRepository.findBySyncedAtGreaterThanEqual(activeSince))
+                .thenReturn(List.of(snapshot));
+        when(userRepository.findAllById(List.of("synced-user")))
+                .thenReturn(List.of(syncedUser));
+        when(userRepository.findRecentlyCreatedWithoutProgressSync(activeSince))
+                .thenReturn(List.of(recentUnsyncedUser));
+
+        List<User> candidates = service.findNotificationCandidates(activeSince);
+
+        assertEquals(
+                List.of("synced-user", "recent-unsynced-user"),
+                candidates.stream().map(User::getId).toList()
+        );
+        verify(userRepository).findRecentlyCreatedWithoutProgressSync(activeSince);
     }
 }
