@@ -55,7 +55,7 @@ class RetentionNotificationServiceTest {
         assertEquals(
                 new RetentionNotificationService.NotificationContent(
                         "Есть свободная минутка?",
-                        "Слово apple, которое пора повторить"
+                        "Слово apple пора повторить"
                 ),
                 options.get(3)
         );

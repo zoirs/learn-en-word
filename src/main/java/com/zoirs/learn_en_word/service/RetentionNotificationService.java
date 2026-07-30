@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
@@ -32,6 +31,7 @@ public class RetentionNotificationService {
     private static final int EARLY_NOTIFICATION_HOUR = 18;
     private static final int LATE_NOTIFICATION_HOUR = 19;
     private static final int MAX_DYNAMIC_NOTIFICATION_WORDS_COUNT = 3;
+    private static final long SEND_DELAY_MILLIS = 5_000;
     private static final List<NotificationContent> STATIC_NOTIFICATIONS = List.of(
             new NotificationContent(
                     "Английский за 2 минуты",
@@ -67,7 +67,6 @@ public class RetentionNotificationService {
     }
 
     @Scheduled(cron = "0 10 * * * *")
-    @Transactional
     public void sendRetentionNotifications() {
         OffsetDateTime activeSince = OffsetDateTime.now().minusWeeks(2);
         log.info("Started retention notification job, activeSince={}", activeSince);
@@ -76,10 +75,15 @@ public class RetentionNotificationService {
 
         int sentCount = 0;
         int errorCount = 0;
+        boolean sendAttempted = false;
         for (User user : users) {
             if (!isEligibleForNotification(user)) {
                 continue;
             }
+            if (sendAttempted && !waitBeforeNextSend()) {
+                break;
+            }
+            sendAttempted = true;
 
             try {
                 List<String> learningWords = getRandomLearningWords(user);
@@ -108,6 +112,17 @@ public class RetentionNotificationService {
         }
 
         log.info("Finished retention notification job, sent={}, errors={}", sentCount, errorCount);
+    }
+
+    private boolean waitBeforeNextSend() {
+        try {
+            Thread.sleep(SEND_DELAY_MILLIS);
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Retention notification job interrupted while waiting between sends");
+            return false;
+        }
     }
 
     List<User> findNotificationCandidates(OffsetDateTime activeSince) {
