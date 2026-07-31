@@ -1,7 +1,6 @@
 package com.zoirs.learn_en_word.service;
 
 import com.zoirs.learn_en_word.entity.User;
-import com.zoirs.learn_en_word.entity.UserProgressSyncSnapshot;
 import com.zoirs.learn_en_word.repository.UserProgressSyncSnapshotRepository;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -195,15 +194,13 @@ class RetentionNotificationServiceTest {
         );
         OffsetDateTime activeSince = OffsetDateTime.parse("2026-07-16T12:00:00Z");
 
-        UserProgressSyncSnapshot snapshot = new UserProgressSyncSnapshot();
-        snapshot.setUserId("synced-user");
         User syncedUser = new User();
         syncedUser.setId("synced-user");
         User recentUnsyncedUser = new User();
         recentUnsyncedUser.setId("recent-unsynced-user");
 
-        when(snapshotRepository.findBySyncedAtGreaterThanEqual(activeSince))
-                .thenReturn(List.of(snapshot));
+        when(snapshotRepository.findUserIdsBySyncedAtGreaterThanEqual(activeSince))
+                .thenReturn(List.of("synced-user"));
         when(userRepository.findAllById(List.of("synced-user")))
                 .thenReturn(List.of(syncedUser));
         when(userRepository.findRecentlyCreatedWithoutProgressSync(activeSince))

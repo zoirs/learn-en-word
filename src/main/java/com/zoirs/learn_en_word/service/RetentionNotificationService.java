@@ -1,7 +1,6 @@
 package com.zoirs.learn_en_word.service;
 
 import com.zoirs.learn_en_word.entity.User;
-import com.zoirs.learn_en_word.entity.UserProgressSyncSnapshot;
 import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.repository.MeaningRepository;
 import com.zoirs.learn_en_word.repository.UserProgressSyncSnapshotRepository;
@@ -126,10 +125,8 @@ public class RetentionNotificationService {
     }
 
     List<User> findNotificationCandidates(OffsetDateTime activeSince) {
-        List<String> syncedUserIds = userProgressSyncSnapshotRepository.findBySyncedAtGreaterThanEqual(activeSince)
-                .stream()
-                .map(UserProgressSyncSnapshot::getUserId)
-                .toList();
+        List<String> syncedUserIds =
+                userProgressSyncSnapshotRepository.findUserIdsBySyncedAtGreaterThanEqual(activeSince);
 
         Map<String, User> candidatesById = new LinkedHashMap<>();
         userRepository.findAllById(syncedUserIds)
