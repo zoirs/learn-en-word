@@ -88,7 +88,7 @@ public class RetentionNotificationService {
                 List<String> learningWords = getRandomLearningWords(user);
                 NotificationContent notification = selectRandomNotification(learningWords);
                 notificationService.sendNotification(
-                        user.getFirebaseToken(),
+                        user,
                         notification.title(),
                         notification.body()
                 );

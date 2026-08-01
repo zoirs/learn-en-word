@@ -1,7 +1,9 @@
 package com.zoirs.learn_en_word.service;
 
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.MessagingErrorCode;
 import com.google.firebase.messaging.Notification;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.entity.UserProgressSyncSnapshot;
@@ -59,6 +61,45 @@ public class NotificationService {
         log.info("Notification sent: {}", response);
     }
 
+    public void sendNotification(User user, String title, String body) throws Exception {
+        String firebaseToken = user.getFirebaseToken();
+        try {
+            sendNotification(firebaseToken, title, body);
+        } catch (FirebaseMessagingException e) {
+            handleFirebaseMessagingException(user, firebaseToken, e);
+            throw e;
+        }
+    }
+
+    void handleFirebaseMessagingException(
+            User user,
+            String firebaseToken,
+            FirebaseMessagingException messagingException
+    ) {
+        if (messagingException.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED) {
+            clearUnregisteredToken(user, firebaseToken, messagingException);
+        }
+    }
+
+    private void clearUnregisteredToken(
+            User user,
+            String firebaseToken,
+            FirebaseMessagingException messagingException
+    ) {
+        try {
+            int clearedTokens = userRepository.clearFirebaseToken(user.getId(), firebaseToken);
+            if (clearedTokens > 0) {
+                user.setFirebaseToken(null);
+                log.warn("Removed unregistered Firebase token for user: {}", user.getId());
+            } else {
+                log.info("Firebase token was already changed for user: {}", user.getId());
+            }
+        } catch (RuntimeException cleanupException) {
+            messagingException.addSuppressed(cleanupException);
+            log.error("Failed to remove unregistered Firebase token for user: {}", user.getId(), cleanupException);
+        }
+    }
+
     // @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public void sendHourlyQuizzes() {
@@ -111,7 +152,7 @@ public class NotificationService {
                 }).collect(Collectors.joining("\n"));
                 String title = "Время повторить слова";
 
-                sendNotification(user.getFirebaseToken(), title, body);
+                sendNotification(user, title, body);
                 incrementDailyNotificationCount(user);
                 sentCount++;
             } catch (Exception e) {
