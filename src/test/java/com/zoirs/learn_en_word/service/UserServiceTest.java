@@ -1,5 +1,6 @@
 package com.zoirs.learn_en_word.service;
 
+import com.zoirs.learn_en_word.entity.SubscriptionPaymentType;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -52,5 +53,34 @@ class UserServiceTest {
         assertEquals(3, savedUser.getTimezoneOffset());
         assertEquals(5, savedUser.getDailyNotifications());
         assertNotNull(savedUser.getCreatedAt());
+    }
+
+    @Test
+    void createOrUpdatePaymentType_WhenEmailIsNull_UsesIdAsUsername() {
+        String id = "$RCAnonymousID:083a7c4b512d4d69b6cc563e99951f67";
+        when(userRepository.findById(id)).thenReturn(Optional.empty());
+
+        userService.createOrUpdatePaymentType(null, id, SubscriptionPaymentType.REVENUE_CAT);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        User savedUser = userCaptor.getValue();
+        assertEquals(id, savedUser.getId());
+        assertEquals(id, savedUser.getUsername());
+        assertEquals(SubscriptionPaymentType.REVENUE_CAT, savedUser.getPaymentType());
+    }
+
+    @Test
+    void createOrUpdatePaymentType_WhenEmailIsNull_UpdatesUserFoundById() {
+        String id = "$RCAnonymousID:083a7c4b512d4d69b6cc563e99951f67";
+        User user = new User();
+        user.setId(id);
+        user.setUsername(id);
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+
+        userService.createOrUpdatePaymentType(null, id, SubscriptionPaymentType.REVENUE_CAT);
+
+        assertEquals(SubscriptionPaymentType.REVENUE_CAT, user.getPaymentType());
+        verify(userRepository).save(user);
     }
 }

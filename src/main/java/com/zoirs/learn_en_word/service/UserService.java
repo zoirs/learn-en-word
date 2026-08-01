@@ -65,7 +65,13 @@ public class UserService {
 
     @Transactional
     public User createOrUpdatePaymentType(String email, String id, SubscriptionPaymentType paymentType) {
-        User user = userRepository.findByEmailAndId(email, id);
+        User user = null;
+        if (StringUtils.isNotEmpty(id)) {
+            user = userRepository.findById(id).orElse(null);
+        }
+        if (user == null && StringUtils.isNotEmpty(email)) {
+            user = userRepository.findByEmail(email);
+        }
         if (user != null) {
             user.setPaymentType(paymentType);
             return userRepository.save(user);
@@ -76,7 +82,7 @@ public class UserService {
         if (!StringUtils.isEmpty(id)) {
             newUser.setId(id);
         }
-        newUser.setUsername(email);
+        newUser.setUsername(MoreObjects.firstNonNull(email, id));
         newUser.setPaymentType(paymentType);
         return userRepository.save(newUser);
 
