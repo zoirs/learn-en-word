@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -89,26 +91,22 @@ public class UserService {
     }
 
     public void initUser(String id, String fireBaseToken, Integer timezoneOffset, int dailyNotifications) {
+        OffsetDateTime sessionStartedAt = OffsetDateTime.now(ZoneOffset.UTC);
         Optional<User> userO = userRepository.findById(id);
         if (userO.isPresent()) {
             User user = userO.get();
-            log.info("User {} updated firebase token and timezone", id);
-            boolean isNeedSave = false;
+            log.info("User {} session initialized", id);
             if (StringUtils.isNotEmpty(fireBaseToken) && !fireBaseToken.equals(user.getFirebaseToken())) {
                 user.setFirebaseToken(fireBaseToken);
-                isNeedSave = true;
             }
             if (timezoneOffset != null && !timezoneOffset.equals(user.getTimezoneOffset())) {
                 user.setTimezoneOffset(timezoneOffset);
-                isNeedSave = true;
             }
             if (!Integer.valueOf(dailyNotifications).equals(user.getDailyNotifications())) {
                 user.setDailyNotifications(dailyNotifications);
-                isNeedSave = true;
             }
-            if (isNeedSave) {
-                userRepository.save(user);
-            }
+            user.setLastSessionAt(sessionStartedAt);
+            userRepository.save(user);
         } else {
             User newUser = new User();
             newUser.setId(id);
@@ -116,6 +114,7 @@ public class UserService {
             newUser.setFirebaseToken(fireBaseToken);
             newUser.setTimezoneOffset(timezoneOffset);
             newUser.setDailyNotifications(dailyNotifications);
+            newUser.setLastSessionAt(sessionStartedAt);
             userRepository.save(newUser);
         }
     }

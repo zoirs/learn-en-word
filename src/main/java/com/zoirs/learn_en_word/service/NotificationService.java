@@ -6,11 +6,9 @@ import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MessagingErrorCode;
 import com.google.firebase.messaging.Notification;
 import com.zoirs.learn_en_word.entity.User;
-import com.zoirs.learn_en_word.entity.UserProgressSyncSnapshot;
 import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.model.TranslationEntity;
 import com.zoirs.learn_en_word.repository.MeaningRepository;
-import com.zoirs.learn_en_word.repository.UserProgressSyncSnapshotRepository;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -45,8 +43,6 @@ public class NotificationService {
     private UserRepository userRepository;
     @Autowired
     private MeaningRepository meaningRepository;
-    @Autowired
-    private UserProgressSyncSnapshotRepository userProgressSyncSnapshotRepository;
 
     public void sendNotification(String token, String title, String body) throws Exception {
         Message message = Message.builder()
@@ -106,11 +102,7 @@ public class NotificationService {
         OffsetDateTime activeSince = OffsetDateTime.now().minusWeeks(2);
         log.info("Started hourly quiz notification job, activeSince={}", activeSince);
 
-        List<String> activeUserIds = userProgressSyncSnapshotRepository.findBySyncedAtGreaterThanEqual(activeSince)
-                .stream()
-                .map(UserProgressSyncSnapshot::getUserId)
-                .toList();
-        List<User> users = userRepository.findAllById(activeUserIds);
+        List<User> users = userRepository.findRecentlyActive(activeSince);
 
         int sentCount = 0;
         int errorCount = 0;

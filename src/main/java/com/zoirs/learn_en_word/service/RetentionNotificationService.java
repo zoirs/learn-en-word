@@ -3,7 +3,6 @@ package com.zoirs.learn_en_word.service;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.repository.MeaningRepository;
-import com.zoirs.learn_en_word.repository.UserProgressSyncSnapshotRepository;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -17,7 +16,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -49,20 +47,17 @@ public class RetentionNotificationService {
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final MeaningRepository meaningRepository;
-    private final UserProgressSyncSnapshotRepository userProgressSyncSnapshotRepository;
     private final Map<String, LocalDate> lastNotificationDates = new ConcurrentHashMap<>();
     private final Random random = new Random();
 
     public RetentionNotificationService(
             NotificationService notificationService,
             UserRepository userRepository,
-            MeaningRepository meaningRepository,
-            UserProgressSyncSnapshotRepository userProgressSyncSnapshotRepository
+            MeaningRepository meaningRepository
     ) {
         this.notificationService = notificationService;
         this.userRepository = userRepository;
         this.meaningRepository = meaningRepository;
-        this.userProgressSyncSnapshotRepository = userProgressSyncSnapshotRepository;
     }
 
     @Scheduled(cron = "0 10 * * * *")
@@ -125,15 +120,7 @@ public class RetentionNotificationService {
     }
 
     List<User> findNotificationCandidates(OffsetDateTime activeSince) {
-        List<String> syncedUserIds =
-                userProgressSyncSnapshotRepository.findUserIdsBySyncedAtGreaterThanEqual(activeSince);
-
-        Map<String, User> candidatesById = new LinkedHashMap<>();
-        userRepository.findAllById(syncedUserIds)
-                .forEach(user -> candidatesById.put(user.getId(), user));
-        userRepository.findRecentlyCreatedWithoutProgressSync(activeSince)
-                .forEach(user -> candidatesById.putIfAbsent(user.getId(), user));
-        return new ArrayList<>(candidatesById.values());
+        return userRepository.findRecentlyActive(activeSince);
     }
 
     private boolean isEligibleForNotification(User user) {

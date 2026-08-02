@@ -36,12 +36,7 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("""
             SELECT u
             FROM User u
-            WHERE u.createdAt >= :createdAfter
-              AND NOT EXISTS (
-                  SELECT s.userId
-                  FROM UserProgressSyncSnapshot s
-                  WHERE s.userId = u.id
-              )
+            WHERE COALESCE(u.createdAt, u.lastSessionAt) >= :activeSince
             """)
-    List<User> findRecentlyCreatedWithoutProgressSync(@Param("createdAfter") OffsetDateTime createdAfter);
+    List<User> findRecentlyActive(@Param("activeSince") OffsetDateTime activeSince);
 }

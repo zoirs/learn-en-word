@@ -10,10 +10,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +43,22 @@ class UserServiceTest {
     }
 
     @Test
+    void initUser_WhenUserDataIsUnchanged_UpdatesLastSessionTime() {
+        OffsetDateTime previousSessionAt = OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        User user = new User();
+        user.setId("user-1");
+        user.setDailyNotifications(5);
+        user.setLastSessionAt(previousSessionAt);
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+
+        userService.initUser("user-1", null, null, 5);
+
+        assertNotNull(user.getLastSessionAt());
+        assertTrue(user.getLastSessionAt().isAfter(previousSessionAt));
+        verify(userRepository).save(user);
+    }
+
+    @Test
     void initUser_WhenUserDoesNotExist_StoresTimezoneOffset() {
         when(userRepository.findById("user-1")).thenReturn(Optional.empty());
 
@@ -53,6 +72,7 @@ class UserServiceTest {
         assertEquals(3, savedUser.getTimezoneOffset());
         assertEquals(5, savedUser.getDailyNotifications());
         assertNotNull(savedUser.getCreatedAt());
+        assertNotNull(savedUser.getLastSessionAt());
     }
 
     @Test

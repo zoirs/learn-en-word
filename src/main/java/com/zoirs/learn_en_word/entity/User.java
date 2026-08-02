@@ -38,6 +38,9 @@ public class User {
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
 
+    @Column(name = "last_session_at")
+    private OffsetDateTime lastSessionAt;
+
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "integer[]")
     private Set<Integer> knownWords;
