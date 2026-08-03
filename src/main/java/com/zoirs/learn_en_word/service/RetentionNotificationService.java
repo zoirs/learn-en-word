@@ -36,7 +36,7 @@ public class RetentionNotificationService {
             ),
             new NotificationContent(
                     "5 слов ждут повторения",
-                    "Пройдите короткую тренировку, пока они не забылись"
+                    "Пройдите короткую тренировку, пока слова не забылись"
             ),
             new NotificationContent(
                     "Есть свободная минута?",
