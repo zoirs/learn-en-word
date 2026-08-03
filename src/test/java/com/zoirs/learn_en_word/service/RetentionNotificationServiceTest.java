@@ -1,7 +1,6 @@
 package com.zoirs.learn_en_word.service;
 
 import com.zoirs.learn_en_word.entity.User;
-import com.zoirs.learn_en_word.repository.UserProgressSyncSnapshotRepository;
 import com.zoirs.learn_en_word.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,7 +21,7 @@ import static org.mockito.Mockito.when;
 class RetentionNotificationServiceTest {
 
     private final RetentionNotificationService retentionNotificationService =
-            new RetentionNotificationService(null, null, null, null);
+            new RetentionNotificationService(null, null, null);
 
     @Test
     void buildNotificationOptionsWithoutLearningWordsReturnsStaticOptions() {
@@ -156,62 +155,70 @@ class RetentionNotificationServiceTest {
     }
 
     @Test
-    void wasCreatedBeforeTodayRejectsUserCreatedToday() {
+    void wasLastActivityBeforeTodayRejectsUserCreatedTodayWithoutSession() {
         User user = new User();
         user.setTimezoneOffset(3);
         user.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
 
-        assertFalse(retentionNotificationService.wasCreatedBeforeToday(user));
+        assertFalse(retentionNotificationService.wasLastActivityBeforeToday(user));
     }
 
     @Test
-    void wasCreatedBeforeTodayAcceptsUserFromPreviousDay() {
+    void wasLastActivityBeforeTodayAcceptsUserCreatedOnPreviousDayWithoutSession() {
         User user = new User();
         user.setTimezoneOffset(3);
         user.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC).minusDays(2));
 
-        assertTrue(retentionNotificationService.wasCreatedBeforeToday(user));
+        assertTrue(retentionNotificationService.wasLastActivityBeforeToday(user));
     }
 
     @Test
-    void wasCreatedBeforeTodayAcceptsLegacyUserWithoutCreationDate() {
+    void wasLastActivityBeforeTodayRejectsSessionFromToday() {
+        User user = new User();
+        user.setTimezoneOffset(3);
+        user.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10));
+        user.setLastSessionAt(OffsetDateTime.now(ZoneOffset.UTC));
+
+        assertFalse(retentionNotificationService.wasLastActivityBeforeToday(user));
+    }
+
+    @Test
+    void wasLastActivityBeforeTodayAcceptsSessionFromPreviousDay() {
+        User user = new User();
+        user.setTimezoneOffset(3);
+        user.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10));
+        user.setLastSessionAt(OffsetDateTime.now(ZoneOffset.UTC).minusDays(2));
+
+        assertTrue(retentionNotificationService.wasLastActivityBeforeToday(user));
+    }
+
+    @Test
+    void wasLastActivityBeforeTodayAcceptsLegacyUserWithoutActivityDates() {
         User user = new User();
         user.setCreatedAt(null);
+        user.setLastSessionAt(null);
 
-        assertTrue(retentionNotificationService.wasCreatedBeforeToday(user));
+        assertTrue(retentionNotificationService.wasLastActivityBeforeToday(user));
     }
 
     @Test
-    void findNotificationCandidatesIncludesSyncedAndRecentUnsyncedUsers() {
+    void findNotificationCandidatesUsesRecentlyActiveUsers() {
         UserRepository userRepository = mock(UserRepository.class);
-        UserProgressSyncSnapshotRepository snapshotRepository =
-                mock(UserProgressSyncSnapshotRepository.class);
         RetentionNotificationService service = new RetentionNotificationService(
                 null,
                 userRepository,
-                null,
-                snapshotRepository
+                null
         );
         OffsetDateTime activeSince = OffsetDateTime.parse("2026-07-16T12:00:00Z");
 
-        User syncedUser = new User();
-        syncedUser.setId("synced-user");
-        User recentUnsyncedUser = new User();
-        recentUnsyncedUser.setId("recent-unsynced-user");
-
-        when(snapshotRepository.findUserIdsBySyncedAtGreaterThanEqual(activeSince))
-                .thenReturn(List.of("synced-user"));
-        when(userRepository.findAllById(List.of("synced-user")))
-                .thenReturn(List.of(syncedUser));
-        when(userRepository.findRecentlyCreatedWithoutProgressSync(activeSince))
-                .thenReturn(List.of(recentUnsyncedUser));
+        User recentlyActiveUser = new User();
+        recentlyActiveUser.setId("recently-active-user");
+        when(userRepository.findRecentlyActive(activeSince))
+                .thenReturn(List.of(recentlyActiveUser));
 
         List<User> candidates = service.findNotificationCandidates(activeSince);
 
-        assertEquals(
-                List.of("synced-user", "recent-unsynced-user"),
-                candidates.stream().map(User::getId).toList()
-        );
-        verify(userRepository).findRecentlyCreatedWithoutProgressSync(activeSince);
+        assertEquals(List.of(recentlyActiveUser), candidates);
+        verify(userRepository).findRecentlyActive(activeSince);
     }
 }

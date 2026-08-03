@@ -126,7 +126,7 @@ public class RetentionNotificationService {
     private boolean isEligibleForNotification(User user) {
         return StringUtils.isNotEmpty(user.getFirebaseToken())
                 && isNotificationEnabled(user)
-                && wasCreatedBeforeToday(user)
+                && wasLastActivityBeforeToday(user)
                 && isNotificationTime(user)
                 && !wasNotificationSentToday(user);
     }
@@ -145,16 +145,19 @@ public class RetentionNotificationService {
                 : LATE_NOTIFICATION_HOUR;
     }
 
-    boolean wasCreatedBeforeToday(User user) {
-        if (user.getCreatedAt() == null) {
+    boolean wasLastActivityBeforeToday(User user) {
+        OffsetDateTime lastActivityAt = user.getLastSessionAt() != null
+                ? user.getLastSessionAt()
+                : user.getCreatedAt();
+        if (lastActivityAt == null) {
             return true;
         }
 
         OffsetDateTime userLocalDateTime = getUserLocalDateTime(user);
-        LocalDate createdDate = user.getCreatedAt()
+        LocalDate lastActivityDate = lastActivityAt
                 .withOffsetSameInstant(userLocalDateTime.getOffset())
                 .toLocalDate();
-        return createdDate.isBefore(userLocalDateTime.toLocalDate());
+        return lastActivityDate.isBefore(userLocalDateTime.toLocalDate());
     }
 
     private boolean wasNotificationSentToday(User user) {
