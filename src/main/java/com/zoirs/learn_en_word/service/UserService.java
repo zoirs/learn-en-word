@@ -75,10 +75,11 @@ public class UserService {
             user = userRepository.findByEmail(email);
         }
         if (user != null) {
+            log.info("User {} {}, updating payment type {}", email, id, paymentType);
             user.setPaymentType(paymentType);
             return userRepository.save(user);
         }
-        log.info("Impossible case, User not found, creating new user");
+        log.info("Impossible case, User not found, creating new user {} {}, payment {}", email, id, paymentType);
         User newUser = new User();
         newUser.setEmail(email);
         if (!StringUtils.isEmpty(id)) {

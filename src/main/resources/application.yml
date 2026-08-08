@@ -36,6 +36,15 @@ spring:
 
 # Logging Configuration
 logging:
+  file:
+    name: ${LOG_FILE:logs/learn-en-word.log}
+  logback:
+    rollingpolicy:
+      file-name-pattern: ${LOG_FILE_PATTERN:${LOG_FILE:logs/learn-en-word.log}.%d{yyyy-MM-dd}.%i.gz}
+      max-file-size: ${LOG_MAX_FILE_SIZE:10MB}
+      max-history: ${LOG_MAX_HISTORY:30}
+      total-size-cap: ${LOG_TOTAL_SIZE_CAP:1GB}
+      clean-history-on-start: false
   level:
     root: INFO
 #    com.zoirs.learn_en_word: DEBUG

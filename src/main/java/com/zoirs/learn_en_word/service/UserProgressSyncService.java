@@ -137,6 +137,7 @@ public class UserProgressSyncService {
             user.setEmail(userBlock.email());
         }
         if (userBlock != null && StringUtils.isNotBlank(userBlock.subscriptionStatus())) {
+            log.info("Setting payment type for user {} to {}", user.getId(), userBlock.subscriptionStatus());
             user.setPaymentType(parsePaymentType(userBlock.subscriptionStatus()));
         }
         if (settingsBlock != null && settingsBlock.dailyNotifications() != null) {

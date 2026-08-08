@@ -49,8 +49,7 @@ public class RCatWebhookController {
             }
         }
 
-        log.info("User ID: {}", userId);
-        log.info("Email: {}", email);
+        log.info("User ID: {}; email {}", userId, email);
         userService.createOrUpdatePaymentType(email, userId, SubscriptionPaymentType.REVENUE_CAT);
         return ResponseEntity.ok("");
     }
