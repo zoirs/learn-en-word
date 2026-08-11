@@ -5,6 +5,7 @@ import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MessagingErrorCode;
 import com.google.firebase.messaging.Notification;
+import com.zoirs.learn_en_word.entity.SubscriptionPaymentType;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.model.MeaningEntity;
 import com.zoirs.learn_en_word.model.TranslationEntity;
@@ -19,16 +20,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Service
 public class NotificationService {
@@ -37,6 +40,12 @@ public class NotificationService {
     private static final int DEFAULT_DAILY_NOTIFICATIONS = 3;
     private static final int NOTIFICATION_START_HOUR = 10;
     private static final int NOTIFICATION_END_HOUR = 21;
+    private static final int SUBSCRIPTION_OFFER_INTERVAL_DAYS = 3;
+    private static final int NOTIFICATION_WORDS_COUNT = 3;
+    // FCM allows 4096-byte payloads; reserve space for payload keys and JSON overhead.
+    private static final int MAX_NOTIFICATION_TEXT_BYTES = 3_500;
+    private static final String FREE_NOTIFICATION_TITLE = "Повторяйте слова, не открывая приложение";
+    private static final String SUBSCRIPTION_PROMPT = "Доступно по подписке";
     private final Map<String, DailyNotificationCounter> dailyNotificationCounters = new ConcurrentHashMap<>();
 
     @Autowired
@@ -96,11 +105,11 @@ public class NotificationService {
         }
     }
 
-    // @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 0 * * * *")
     @Transactional
-    public void sendHourlyQuizzes() {
+    public void sendWordReviewNotifications() {
         OffsetDateTime activeSince = OffsetDateTime.now().minusWeeks(2);
-        log.info("Started hourly quiz notification job, activeSince={}", activeSince);
+        log.info("Started word review notification job, activeSince={}", activeSince);
 
         List<User> users = userRepository.findRecentlyActive(activeSince);
 
@@ -108,44 +117,48 @@ public class NotificationService {
         int errorCount = 0;
         for (User user : users) {
             if (StringUtils.isEmpty(user.getFirebaseToken())
-                    || CollectionUtils.isEmpty(user.getNewWords())
                     || CollectionUtils.isEmpty(user.getLearningWords())) {
                 continue;
             }
+
+            boolean paidSubscription = hasPaidSubscription(user);
             int dailyNotificationLimit = resolveDailyNotificationLimit(user);
-            if (dailyNotificationLimit <= 0 || isDailyNotificationLimitReached(user, dailyNotificationLimit)) {
+            if (dailyNotificationLimit <= 0) {
                 continue;
             }
-            if (!isNotificationHour(user, dailyNotificationLimit)) {
+
+            if (paidSubscription) {
+                if (CollectionUtils.isEmpty(user.getNewWords())
+                        || isDailyNotificationLimitReached(user, dailyNotificationLimit)
+                        || !isNotificationHour(user, dailyNotificationLimit)) {
+                    continue;
+                }
+            } else if (!isSubscriptionOfferDue(user) || !isNotificationHour(user, 1)) {
                 continue;
             }
-            List<Integer> ids = user.getLearningWords().stream()
-                    .skip(new Random().nextInt(user.getLearningWords().size()))
-                    .limit(new Random().nextInt(2) + 1)
-                    .toList();
+
+            List<Integer> ids = selectNotificationWordIds(user);
             List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
             if (meanings.isEmpty()) {
                 continue;
             }
-            log.info("Sending notification to user: {} {}", user.getId(), user.getUsername());
             try {
-                String body = meanings.stream().map(m -> {
-                    TranslationEntity translation = m.getTranslationEntity();
-                    StringBuilder wordTranslation = new StringBuilder();
-                    if (StringUtils.isNotEmpty(m.getPrefix())) {
-                        wordTranslation.append(m.getPrefix())
-                                .append(" ")
-                                .append(m.getText());
-                    } else {
-                        wordTranslation.append(StringUtils.capitalize(m.getText()));
-                    }
-                    wordTranslation.append(" - ").append(translation.getText());
-                    return wordTranslation.toString();
-                }).collect(Collectors.joining("\n"));
-                String title = "Время повторить слова";
+                Optional<NotificationContent> notificationContent = buildNotificationContent(
+                        meanings,
+                        paidSubscription
+                );
+                if (notificationContent.isEmpty()) {
+                    continue;
+                }
+                NotificationContent notification = notificationContent.get();
+                log.info("Sending notification to user: {} {}", user.getId(), user.getUsername());
 
-                sendNotification(user, title, body);
-                incrementDailyNotificationCount(user);
+                sendNotification(user, notification.title(), notification.body());
+                if (paidSubscription) {
+                    incrementDailyNotificationCount(user);
+                } else {
+                    user.setLastSubscriptionOfferNotificationAt(OffsetDateTime.now(ZoneOffset.UTC));
+                }
                 sentCount++;
             } catch (Exception e) {
                 errorCount++;
@@ -156,7 +169,95 @@ public class NotificationService {
                 }
             }
         }
-        log.info("Finished hourly quiz notification job, sent={}, errors={}", sentCount, errorCount);
+        log.info("Finished word review notification job, sent={}, errors={}", sentCount, errorCount);
+    }
+
+    Optional<NotificationContent> buildNotificationContent(
+            List<MeaningEntity> meanings,
+            boolean paidSubscription
+    ) {
+        String title = paidSubscription
+                ? "Время повторить слова"
+                : FREE_NOTIFICATION_TITLE;
+        List<String> wordTranslations = selectWordTranslationsThatFit(
+                meanings,
+                title,
+                paidSubscription
+        );
+        if (wordTranslations.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new NotificationContent(
+                title,
+                buildNotificationBody(wordTranslations, paidSubscription)
+        ));
+    }
+
+    private List<Integer> selectNotificationWordIds(User user) {
+        List<Integer> learningWordIds = new ArrayList<>(user.getLearningWords());
+        Collections.shuffle(learningWordIds);
+        return learningWordIds.stream()
+                .limit(NOTIFICATION_WORDS_COUNT)
+                .toList();
+    }
+
+    private List<String> selectWordTranslationsThatFit(
+            List<MeaningEntity> meanings,
+            String title,
+            boolean paidSubscription
+    ) {
+        List<String> selectedTranslations = new ArrayList<>();
+        for (MeaningEntity meaning : meanings) {
+            if (selectedTranslations.size() >= NOTIFICATION_WORDS_COUNT) {
+                break;
+            }
+
+            String translation = formatWordTranslation(meaning);
+            List<String> candidateTranslations = new ArrayList<>(selectedTranslations);
+            candidateTranslations.add(translation);
+            String candidateBody = buildNotificationBody(candidateTranslations, paidSubscription);
+            if (getUtf8Size(title) + getUtf8Size(candidateBody) <= MAX_NOTIFICATION_TEXT_BYTES) {
+                selectedTranslations.add(translation);
+            }
+        }
+        return selectedTranslations;
+    }
+
+    private String buildNotificationBody(List<String> wordTranslations, boolean paidSubscription) {
+        String body = String.join("\n", wordTranslations);
+        if (!paidSubscription) {
+            body += "\n" + SUBSCRIPTION_PROMPT;
+        }
+        return body;
+    }
+
+    private int getUtf8Size(String value) {
+        return value.getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    private String formatWordTranslation(MeaningEntity meaning) {
+        TranslationEntity translation = meaning.getTranslationEntity();
+        StringBuilder wordTranslation = new StringBuilder();
+        if (StringUtils.isNotEmpty(meaning.getPrefix())) {
+            wordTranslation.append(meaning.getPrefix())
+                    .append(" ")
+                    .append(meaning.getText());
+        } else {
+            wordTranslation.append(StringUtils.capitalize(meaning.getText()));
+        }
+        return wordTranslation.append(" - ").append(translation.getText()).toString();
+    }
+
+    private boolean hasPaidSubscription(User user) {
+        return user.getPaymentType() == SubscriptionPaymentType.REVENUE_CAT
+                || user.getPaymentType() == SubscriptionPaymentType.XSOLLA;
+    }
+
+    private boolean isSubscriptionOfferDue(User user) {
+        OffsetDateTime lastNotificationAt = user.getLastSubscriptionOfferNotificationAt();
+        return lastNotificationAt == null
+                || !lastNotificationAt.plusDays(SUBSCRIPTION_OFFER_INTERVAL_DAYS)
+                .isAfter(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     private int resolveDailyNotificationLimit(User user) {
@@ -216,5 +317,8 @@ public class NotificationService {
     }
 
     private record DailyNotificationCounter(LocalDate date, int count) {
+    }
+
+    record NotificationContent(String title, String body) {
     }
 }

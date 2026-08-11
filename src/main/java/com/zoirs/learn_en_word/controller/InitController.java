@@ -34,7 +34,7 @@ public class InitController {
     @GetMapping("/test")
     public ResponseEntity<Boolean> test() {
         log.info("test notify");
-        notificationService.sendHourlyQuizzes();
+        notificationService.sendWordReviewNotifications();
         return ResponseEntity.ok(true);
     }
 }

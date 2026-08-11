@@ -41,6 +41,9 @@ public class User {
     @Column(name = "last_session_at")
     private OffsetDateTime lastSessionAt;
 
+    @Column(name = "last_subscription_offer_notification_at")
+    private OffsetDateTime lastSubscriptionOfferNotificationAt;
+
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "integer[]")
     private Set<Integer> knownWords;
