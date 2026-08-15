@@ -14,6 +14,7 @@ import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,5 +42,18 @@ class UserMessageServiceTest {
         assertEquals("additional data", savedMessage.getAdditionalInfo());
         assertFalse(savedMessage.getMessageDate().isBefore(beforeSave));
         assertFalse(savedMessage.getMessageDate().isAfter(afterSave));
+    }
+
+    @Test
+    void saveAllowsEmptyFields() {
+        userMessageService.save(null, null, null);
+
+        ArgumentCaptor<UserMessage> captor = ArgumentCaptor.forClass(UserMessage.class);
+        verify(userMessageRepository).save(captor.capture());
+
+        UserMessage savedMessage = captor.getValue();
+        assertNull(savedMessage.getUserId());
+        assertNull(savedMessage.getMessage());
+        assertNull(savedMessage.getAdditionalInfo());
     }
 }

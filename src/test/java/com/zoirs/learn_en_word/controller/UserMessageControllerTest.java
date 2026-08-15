@@ -30,4 +30,14 @@ class UserMessageControllerTest {
         assertEquals(201, response.getStatusCode().value());
         verify(userMessageService).save("user-1", "message text", "additional data");
     }
+
+    @Test
+    void saveAllowsEmptyFields() {
+        UserMessageReq req = new UserMessageReq(null, null, null);
+
+        ResponseEntity<Void> response = controller.save(req);
+
+        assertEquals(201, response.getStatusCode().value());
+        verify(userMessageService).save(null, null, null);
+    }
 }

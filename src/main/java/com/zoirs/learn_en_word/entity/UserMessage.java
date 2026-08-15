@@ -22,15 +22,15 @@ public class UserMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private String userId;
 
     @Lob
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String message;
 
     @Lob
-    @Column(name = "additional_info", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "additional_info", columnDefinition = "TEXT")
     private String additionalInfo;
 
     @Column(name = "message_date", nullable = false, updatable = false)

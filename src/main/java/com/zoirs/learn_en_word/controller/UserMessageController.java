@@ -4,7 +4,6 @@ import com.zoirs.learn_en_word.req.UserMessageReq;
 import com.zoirs.learn_en_word.service.UserMessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +23,7 @@ public class UserMessageController {
 
     @PostMapping
     @Operation(summary = "Save a user message")
-    public ResponseEntity<Void> save(@Valid @RequestBody UserMessageReq req) {
+    public ResponseEntity<Void> save(@RequestBody UserMessageReq req) {
         log.info("Received user message: userId={}, message={}, additionalInfo={}",
                 req.userId(), req.message(), req.additionalInfo());
         userMessageService.save(req.userId(), req.message(), req.additionalInfo());
