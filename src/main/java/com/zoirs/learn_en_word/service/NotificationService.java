@@ -32,6 +32,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static com.zoirs.learn_en_word.service.DatabaseWordSuggestionService.SEARCHABLE_PART_OF_SPEECH_CODES;
 
 @Service
 public class NotificationService {
@@ -45,7 +48,7 @@ public class NotificationService {
     // FCM allows 4096-byte payloads; reserve space for payload keys and JSON overhead.
     private static final int MAX_NOTIFICATION_TEXT_BYTES = 3_500;
     private static final String FREE_NOTIFICATION_TITLE = "Повторяйте слова, не открывая приложение";
-    private static final String SUBSCRIPTION_PROMPT = "Доступно по подписке";
+    private static final String SUBSCRIPTION_PROMPT = "Такие уведомления доступны по подписке";
     private final Map<String, DailyNotificationCounter> dailyNotificationCounters = new ConcurrentHashMap<>();
 
     @Autowired
@@ -137,8 +140,7 @@ public class NotificationService {
                 continue;
             }
 
-            List<Integer> ids = selectNotificationWordIds(user);
-            List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(ids);
+            List<MeaningEntity> meanings = selectNotificationMeanings(user);
             if (meanings.isEmpty()) {
                 continue;
             }
@@ -193,10 +195,14 @@ public class NotificationService {
         ));
     }
 
-    private List<Integer> selectNotificationWordIds(User user) {
+    List<MeaningEntity> selectNotificationMeanings(User user) {
         List<Integer> learningWordIds = new ArrayList<>(user.getLearningWords());
-        Collections.shuffle(learningWordIds);
-        return learningWordIds.stream()
+        List<MeaningEntity> learningMeanings = meaningRepository.findByExternalIdIn(learningWordIds);
+        List<MeaningEntity> wordMeanings = learningMeanings.stream()
+                .filter(meaning -> SEARCHABLE_PART_OF_SPEECH_CODES.contains(meaning.getPartOfSpeechCode()))
+                .collect(Collectors.toCollection(ArrayList::new));
+        Collections.shuffle(wordMeanings);
+        return wordMeanings.stream()
                 .limit(NOTIFICATION_WORDS_COUNT)
                 .toList();
     }
@@ -226,7 +232,7 @@ public class NotificationService {
     private String buildNotificationBody(List<String> wordTranslations, boolean paidSubscription) {
         String body = String.join("\n", wordTranslations);
         if (!paidSubscription) {
-            body += "\n\n" + SUBSCRIPTION_PROMPT;
+            body += "\n—\n" + SUBSCRIPTION_PROMPT;
         }
         return body;
     }

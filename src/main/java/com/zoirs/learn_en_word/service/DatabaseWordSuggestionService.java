@@ -23,7 +23,7 @@ public class DatabaseWordSuggestionService {
 
     private static final int MAX_TEXT_LENGTH_EXCLUSIVE = 20;
     private static final double MIN_POPULARITY = 1d;
-    private static final Set<String> SEARCHABLE_PART_OF_SPEECH_CODES = Set.of("j", "n", "r", "v");
+    static final Set<String> SEARCHABLE_PART_OF_SPEECH_CODES = Set.of("j", "n", "r", "v");
     private static final Set<String> PHRASE_PART_OF_SPEECH_CODES = Set.of("ph", "phi");
 
     private final MeaningRepository meaningRepository;

@@ -104,10 +104,31 @@ class NotificationServiceTest {
         assertEquals(
                 new NotificationService.NotificationContent(
                         "Повторяйте слова, не открывая приложение",
-                        "Apple - яблоко\nTable - стол\nWindow - окно\n\nДоступно по подписке"
+                        "Apple - яблоко\nTable - стол\nWindow - окно\n—\nТакие уведомления доступны по подписке"
                 ),
                 notification
         );
+    }
+
+    @Test
+    void selectNotificationMeaningsExcludesPhrasesBeforeApplyingLimit() {
+        User user = createNotificationUser("user-1", SubscriptionPaymentType.REVENUE_CAT);
+        user.setLearningWords(Set.of(1, 2, 3, 4, 5));
+        when(meaningRepository.findByExternalIdIn(any())).thenReturn(List.of(
+                createMeaning("ball and chain", "ноша", "ph"),
+                createMeaning("apple", "яблоко", "n"),
+                createMeaning("quickly", "быстро", "r"),
+                createMeaning("useful", "полезный", "j"),
+                createMeaning("learn", "учить", "v")
+        ));
+
+        List<MeaningEntity> meanings = notificationService.selectNotificationMeanings(user);
+
+        assertEquals(3, meanings.size());
+        assertTrue(meanings.stream().noneMatch(meaning -> "ph".equals(meaning.getPartOfSpeechCode())));
+        assertTrue(meanings.stream().allMatch(
+                meaning -> Set.of("j", "n", "r", "v").contains(meaning.getPartOfSpeechCode())
+        ));
     }
 
     @Test
@@ -237,8 +258,13 @@ class NotificationServiceTest {
     }
 
     private MeaningEntity createMeaning(String word, String translationText) {
+        return createMeaning(word, translationText, "n");
+    }
+
+    private MeaningEntity createMeaning(String word, String translationText, String partOfSpeechCode) {
         MeaningEntity meaning = new MeaningEntity();
         meaning.setText(word);
+        meaning.setPartOfSpeechCode(partOfSpeechCode);
         TranslationEntity translation = new TranslationEntity();
         translation.setText(translationText);
         meaning.setTranslation(translation);
