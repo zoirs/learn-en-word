@@ -34,7 +34,7 @@ class RetentionNotificationServiceTest {
                 ),
                 new RetentionNotificationService.NotificationContent(
                         "5 слов ждут повторения",
-                        "Пройдите короткую тренировку, пока они не забылись"
+                        "Пройдите короткую тренировку, пока слова не забылись"
                 ),
                 new RetentionNotificationService.NotificationContent(
                         "Есть свободная минута?",

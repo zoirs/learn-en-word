@@ -104,7 +104,7 @@ class NotificationServiceTest {
         assertEquals(
                 new NotificationService.NotificationContent(
                         "Повторяйте слова, не открывая приложение",
-                        "Apple - яблоко\nTable - стол\nWindow - окно\nДоступно по подписке"
+                        "Apple - яблоко\nTable - стол\nWindow - окно\n\nДоступно по подписке"
                 ),
                 notification
         );

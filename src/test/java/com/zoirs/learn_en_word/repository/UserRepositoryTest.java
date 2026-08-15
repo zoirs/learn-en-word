@@ -4,25 +4,26 @@ import com.zoirs.learn_en_word.LearnEnWordApplication;
 import com.zoirs.learn_en_word.entity.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@DataJpaTest(properties = {
-        "spring.jpa.hibernate.ddl-auto=none",
-        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
-})
+@DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=none")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
 @ContextConfiguration(classes = LearnEnWordApplication.class)
 @Sql(statements = {
         """
-        CREATE TABLE users (
+        CREATE TABLE IF NOT EXISTS users (
             id VARCHAR(255) PRIMARY KEY,
             username VARCHAR(255) NOT NULL UNIQUE,
             email VARCHAR(255) UNIQUE,
@@ -47,6 +48,7 @@ class UserRepositoryTest {
     @Test
     void findRecentlyActiveFallsBackToLastSessionWhenCreatedAtIsNull() {
         OffsetDateTime activeSince = OffsetDateTime.of(2026, 7, 19, 12, 0, 0, 0, ZoneOffset.UTC);
+        Set<String> testedUserIds = Set.of("recently-created", "recent-session", "old-created");
 
         userRepository.saveAll(List.of(
                 user("recently-created", activeSince.plusDays(1), null),
@@ -56,6 +58,7 @@ class UserRepositoryTest {
 
         List<String> candidateIds = userRepository.findRecentlyActive(activeSince).stream()
                 .map(User::getId)
+                .filter(testedUserIds::contains)
                 .sorted()
                 .toList();
 

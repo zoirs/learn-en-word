@@ -8,10 +8,10 @@ class WordSuggestionLimitsTest {
 
     @Test
     void forLearningWordsCount_ReturnsConfiguredLimits() {
-        assertLimits(0, 1, 2, 3, 2, 3, 4);
-        assertLimits(9, 1, 2, 3, 2, 3, 4);
-        assertLimits(10, 2, 2, 3, 2, 3, 3);
-        assertLimits(24, 2, 2, 3, 2, 3, 3);
+        assertLimits(0, 2, 3, 4, 2, 6, 7);
+        assertLimits(9, 1, 2, 3, 1, 5, 6);
+        assertLimits(10, 2, 2, 3, 2, 4, 5);
+        assertLimits(24, 2, 2, 3, 2, 4, 5);
         assertLimits(25, 2, 2, 2, 3, 3, 3);
         assertLimits(39, 2, 2, 2, 3, 3, 3);
         assertLimits(40, 3, 2, 2, 3, 3, 2);

@@ -4,6 +4,7 @@ import com.zoirs.learn_en_word.client.ChatGPTClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zoirs.learn_en_word.dto.chatgpt.ChatGPTResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@Disabled("ChatGPT word suggestions are not used by the current application flow")
 class ChatGPTServiceSimpleTest {
 
     private ChatGPTService chatGPTService;

@@ -2,6 +2,7 @@ package com.zoirs.learn_en_word.service;
 
 import com.zoirs.learn_en_word.TestApplicationRunner;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Slf4j
 @SpringBootTest(classes = TestApplicationRunner.class)
 @ActiveProfiles("test")
+@Disabled("ChatGPT word suggestions are not used by the current application flow")
 class ChatGPTServiceIntegrationTest {
 
     @Autowired

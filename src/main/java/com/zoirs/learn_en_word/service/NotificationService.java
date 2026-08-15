@@ -226,7 +226,7 @@ public class NotificationService {
     private String buildNotificationBody(List<String> wordTranslations, boolean paidSubscription) {
         String body = String.join("\n", wordTranslations);
         if (!paidSubscription) {
-            body += "\n" + SUBSCRIPTION_PROMPT;
+            body += "\n\n" + SUBSCRIPTION_PROMPT;
         }
         return body;
     }
