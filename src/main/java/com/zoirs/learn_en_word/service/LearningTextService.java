@@ -53,8 +53,10 @@ public class LearningTextService {
             The text must be one coherent, natural English paragraph without a title, notes, or Markdown.
             Its total length must be between 400 and 500 characters inclusive, counting spaces and punctuation.
             Match the requested CEFR level. Use vocabulary and grammar appropriate for that level.
-            Include words from both the known-words list and the learning-words list. Use the listed spelling exactly.
-            Prioritize learning words, but keep the paragraph natural and meaningful.
+            Treat both word lists as vocabulary pools, not as checklists.
+            Choose only a small, semantically compatible subset that fits one clear topic. Do not try to use every listed word or force unrelated words into the paragraph.
+            Include at least one word from each pool and use the listed spelling exactly. Prefer several learning words only when they fit naturally.
+            Coherence and natural meaning are more important than the number of included words.
             """;
 
     private static final Comparator<MeaningEntity> WORD_ORDER = Comparator
@@ -98,8 +100,8 @@ public class LearningTextService {
             String cefrLevel = calculateCefrLevel(meanings, knownIds);
             String prompt = """
                     CEFR level: %s.
-                    Known words: %s.
-                    Learning words: %s.
+                    Known-word pool: %s.
+                    Learning-word pool: %s.
                     Write the requested English paragraph now.
                     """.formatted(
                     cefrLevel,
@@ -158,7 +160,7 @@ public class LearningTextService {
                         containsAnyWord(normalizedText, learningWords)
                 );
             }
-            currentPrompt = prompt + "\nThe previous attempt was invalid. Carefully satisfy every constraint, especially the 400-500 character limit and inclusion of words from both lists.";
+            currentPrompt = prompt + "\nThe previous attempt was invalid. Carefully satisfy every constraint, especially the 400-500 character limit and inclusion of at least one word from each pool. Use only a coherent subset; do not force every word into the paragraph.";
         }
         log.warn(
                 "Learning text generation produced no valid result: userId={}, attempts={}",

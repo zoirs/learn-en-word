@@ -83,10 +83,14 @@ class LearningTextServiceTest {
 
         ArgumentCaptor<ChatGPTRequest> requestCaptor = ArgumentCaptor.forClass(ChatGPTRequest.class);
         verify(chatGPTClient).generateResponse(requestCaptor.capture());
+        String systemPrompt = requestCaptor.getValue().getMessages().getFirst().getContent();
         String prompt = requestCaptor.getValue().getMessages().get(1).getContent();
+        assertTrue(systemPrompt.contains("Treat both word lists as vocabulary pools, not as checklists"));
+        assertTrue(systemPrompt.contains("Do not try to use every listed word"));
+        assertTrue(systemPrompt.contains("Include at least one word from each pool"));
         assertTrue(prompt.contains("CEFR level: A2"));
-        assertTrue(prompt.contains("Known words: apple"));
-        assertTrue(prompt.contains("Learning words: travel"));
+        assertTrue(prompt.contains("Known-word pool: apple"));
+        assertTrue(prompt.contains("Learning-word pool: travel"));
         assertFalse(prompt.contains("good morning"));
         assertFalse(prompt.contains("take care"));
     }
