@@ -52,7 +52,7 @@ class ChatGPTServiceSimpleTest {
         response.setChoices(List.of(choice));
 
         when(chatGPTClient.generateResponse(any()))
-                .thenReturn(ResponseEntity.ok(response));
+                .thenReturn(chatGptResponse(response));
 
         // When
         Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
@@ -96,7 +96,7 @@ class ChatGPTServiceSimpleTest {
         response.setChoices(List.of(choice));
 
         when(chatGPTClient.generateResponse(any()))
-                .thenReturn(ResponseEntity.ok(response));
+                .thenReturn(chatGptResponse(response));
 
         // When
         Set<String> result = chatGPTService.suggestNewWords(Set.of("dog"), Set.of("book", "chair"));
@@ -119,7 +119,7 @@ class ChatGPTServiceSimpleTest {
         response.setChoices(List.of(choice));
 
         when(chatGPTClient.generateResponse(any()))
-                .thenReturn(ResponseEntity.ok(response));
+                .thenReturn(chatGptResponse(response));
 
         Set<String> learningWords = Set.of(
                 "one", "two", "three", "four", "five",
@@ -140,7 +140,8 @@ class ChatGPTServiceSimpleTest {
         Set<String> learningWords = Set.of("banana");
         
         when(chatGPTClient.generateResponse(any()))
-                .thenReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+                .thenReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("{\"error\":{\"message\":\"Internal server error\"}}"));
 
         // When
         Set<String> result = chatGPTService.suggestNewWords(knownWords, learningWords);
@@ -148,5 +149,13 @@ class ChatGPTServiceSimpleTest {
         // Then
         assertNotNull(result, "Should return empty list instead of null");
         assertTrue(result.isEmpty(), "Should return empty list when API fails");
+    }
+
+    private ResponseEntity<String> chatGptResponse(ChatGPTResponse response) {
+        try {
+            return ResponseEntity.ok(new ObjectMapper().writeValueAsString(response));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

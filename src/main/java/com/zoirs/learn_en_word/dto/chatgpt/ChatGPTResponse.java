@@ -20,4 +20,5 @@ public class ChatGPTResponse {
         private String role;
         private String content;
     }
+
 }

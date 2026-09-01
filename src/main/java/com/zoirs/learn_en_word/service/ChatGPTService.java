@@ -96,18 +96,25 @@ public class ChatGPTService {
                     responseFormat
             );
             log.info("Request: {}", prompt);
-            ResponseEntity<ChatGPTResponse> response = chatGPTClient.generateResponse(request);
+            ResponseEntity<String> response = chatGPTClient.generateResponse(request);
             if (response == null) {
                 log.warn("ChatGPT client returned null response");
                 return Collections.emptySet();
             }
 
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                log.warn("ChatGPT returned non-success status: {}", response.getStatusCode());
+            if (response.getStatusCode().value() != 200) {
+                log.warn(
+                        "ChatGPT returned non-success status: status={}, responseBody={}",
+                        response.getStatusCode(),
+                        response.getBody()
+                );
                 return Collections.emptySet();
             }
 
-            ChatGPTResponse body = response.getBody();
+            if (response.getBody() == null || response.getBody().isBlank()) {
+                return Collections.emptySet();
+            }
+            ChatGPTResponse body = objectMapper.readValue(response.getBody(), ChatGPTResponse.class);
             if (body == null || body.getChoices() == null || body.getChoices().isEmpty()) {
                 return Collections.emptySet();
             }
