@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,12 @@ class LearningTextServiceTest {
             + "On the way, I think about my plans for the day and choose one useful goal. "
             + "After work, I review what I learned and write a short message about it. "
             + "This simple routine keeps me calm, curious, and ready to improve.";
+
+    private static final String VALID_TEXT_WITH_ALL_LEVEL_WORDS = "At work, I put an apple beside my book while I "
+            + "considered my career and a difficult solution. I wanted to travel, so I wrote a coherent plan to "
+            + "justify the expense. I knew that poor preparation could undermine the trip, so I checked every "
+            + "detail carefully. Later, I discussed the idea with a friend, revised my notes, and chose a practical "
+            + "route that matched my budget and schedule.";
 
     private LearningTextService learningTextService;
 
@@ -85,12 +92,14 @@ class LearningTextServiceTest {
         verify(chatGPTClient).generateResponse(requestCaptor.capture());
         String systemPrompt = requestCaptor.getValue().getMessages().getFirst().getContent();
         String prompt = requestCaptor.getValue().getMessages().get(1).getContent();
-        assertTrue(systemPrompt.contains("Treat both word lists as vocabulary pools, not as checklists"));
-        assertTrue(systemPrompt.contains("Do not try to use every listed word"));
-        assertTrue(systemPrompt.contains("Include at least one word from each pool"));
+        assertTrue(systemPrompt.contains("Treat both word lists as optional vocabulary pools, not checklists"));
+        assertTrue(systemPrompt.contains("Use only words that fit the topic naturally; ignore the rest"));
+        assertTrue(systemPrompt.contains("Prioritize natural English, clear logic, and correct collocations"));
+        assertTrue(systemPrompt.contains("Do not add sentences or details only to force a listed word"));
         assertTrue(prompt.contains("CEFR level: A2"));
         assertTrue(prompt.contains("Known-word pool: apple"));
         assertTrue(prompt.contains("Learning-word pool: travel"));
+        assertTrue(prompt.contains("Most words in both pools may remain unused"));
         assertFalse(prompt.contains("good morning"));
         assertFalse(prompt.contains("take care"));
     }
@@ -109,18 +118,49 @@ class LearningTextServiceTest {
                 meaning(7, "justify", 4, "v"),
                 meaning(8, "undermine", 4, "v")
         ));
-        when(chatGPTClient.generateResponse(any())).thenReturn(chatGptResponse(VALID_TEXT));
+        when(chatGPTClient.generateResponse(any())).thenReturn(chatGptResponse(VALID_TEXT_WITH_ALL_LEVEL_WORDS));
 
         GeneratedTextResponse result = learningTextService.generateText("user-1").orElseThrow();
 
-        assertEquals(List.of(1, 2), result.knownMeaningIds());
-        assertEquals(List.of(5), result.learningMeaningIds());
+        assertEquals(2, result.knownMeaningIds().size());
+        assertEquals(2, result.learningMeaningIds().size());
+        assertTrue(Set.of(1, 2, 3, 4).containsAll(result.knownMeaningIds()));
+        assertTrue(Set.of(5, 6, 7, 8).containsAll(result.learningMeaningIds()));
 
         ArgumentCaptor<ChatGPTRequest> requestCaptor = ArgumentCaptor.forClass(ChatGPTRequest.class);
         verify(chatGPTClient).generateResponse(requestCaptor.capture());
         String prompt = requestCaptor.getValue().getMessages().get(1).getContent();
         assertTrue(prompt.contains("CEFR level: B1"));
         assertFalse(prompt.contains("CEFR level: C1"));
+        assertEquals(2, promptPool(prompt, "Known-word pool: ").size());
+        assertEquals(2, promptPool(prompt, "Learning-word pool: ").size());
+    }
+
+    @Test
+    void generateText_LimitsEachRandomWordPoolToThirtyWords() {
+        Set<Integer> knownIds = new java.util.LinkedHashSet<>();
+        Set<Integer> learningIds = new java.util.LinkedHashSet<>();
+        List<MeaningEntity> meanings = new ArrayList<>();
+        for (int id = 1; id <= 80; id++) {
+            knownIds.add(id);
+            meanings.add(meaning(id, "known" + id, 1, "n"));
+        }
+        for (int id = 101; id <= 180; id++) {
+            learningIds.add(id);
+            meanings.add(meaning(id, "learning" + id, 2, "n"));
+        }
+
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user(knownIds, learningIds)));
+        when(meaningRepository.findByExternalIdIn(anyList())).thenReturn(meanings);
+        when(chatGPTClient.generateResponse(any())).thenReturn(ResponseEntity.status(429).body("{}"));
+
+        assertTrue(learningTextService.generateText("user-1").isEmpty());
+
+        ArgumentCaptor<ChatGPTRequest> requestCaptor = ArgumentCaptor.forClass(ChatGPTRequest.class);
+        verify(chatGPTClient, times(2)).generateResponse(requestCaptor.capture());
+        String prompt = requestCaptor.getAllValues().getFirst().getMessages().get(1).getContent();
+        assertEquals(30, promptPool(prompt, "Known-word pool: ").size());
+        assertEquals(30, promptPool(prompt, "Learning-word pool: ").size());
     }
 
     @Test
@@ -269,5 +309,13 @@ class LearningTextServiceTest {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private List<String> promptPool(String prompt, String prefix) {
+        String line = prompt.lines()
+                .filter(value -> value.startsWith(prefix))
+                .findFirst()
+                .orElseThrow();
+        return List.of(line.substring(prefix.length(), line.length() - 1).split(", "));
     }
 }

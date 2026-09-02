@@ -33,10 +33,9 @@ import java.util.regex.Pattern;
 @Slf4j
 public class LearningTextService {
 
-    private static final int MIN_TEXT_LENGTH = 400;
+    private static final int MIN_TEXT_LENGTH = 300;
     private static final int MAX_TEXT_LENGTH = 500;
-    private static final int MAX_KNOWN_WORDS = 100;
-    private static final int MAX_LEARNING_WORDS = 30;
+    private static final int MAX_WORDS_PER_POOL = 30;
     private static final int MAX_GENERATION_ATTEMPTS = 2;
     private static final Set<String> PHRASE_PART_OF_SPEECH_CODES = Set.of("ph", "phi");
 
@@ -48,15 +47,21 @@ public class LearningTextService {
     );
 
     private static final String SYSTEM_PROMPT = """
-            You create short reading passages for learners of English.
+            Create a short English reading passage for a learner.
+            
             Return only JSON matching the requested schema.
-            The text must be one coherent, natural English paragraph without a title, notes, or Markdown.
-            Its total length must be between 400 and 500 characters inclusive, counting spaces and punctuation.
-            Match the requested CEFR level. Use vocabulary and grammar appropriate for that level.
-            Treat both word lists as vocabulary pools, not as checklists.
-            Choose only a small, semantically compatible subset that fits one clear topic. Do not try to use every listed word or force unrelated words into the paragraph.
-            Include at least one word from each pool and use the listed spelling exactly. Prefer several learning words only when they fit naturally.
-            Coherence and natural meaning are more important than the number of included words.
+            
+            Requirements:
+            
+            * Write one coherent, natural paragraph with no title, notes, or Markdown.
+            * Length: 400–500 characters including spaces and punctuation.
+            * Match the requested CEFR level.
+            * Choose one clear topic and keep all details logically consistent.
+            * Treat both word lists as optional vocabulary pools, not checklists.
+            * Use at least one word from each pool, with the exact listed spelling.
+            * Use only words that fit the topic naturally; ignore the rest.
+            * Prioritize natural English, clear logic, and correct collocations over vocabulary coverage.
+            * Do not add sentences or details only to force a listed word into the text.
             """;
 
     private static final Comparator<MeaningEntity> WORD_ORDER = Comparator
@@ -91,8 +96,8 @@ public class LearningTextService {
             allIds.addAll(knownIds);
 
             List<MeaningEntity> meanings = meaningRepository.findByExternalIdIn(new ArrayList<>(allIds));
-            List<VocabularyWord> learningWords = selectWords(meanings, learningIds, MAX_LEARNING_WORDS);
-            List<VocabularyWord> knownWords = selectWords(meanings, knownIds, MAX_KNOWN_WORDS);
+            List<VocabularyWord> learningWords = selectWords(meanings, learningIds);
+            List<VocabularyWord> knownWords = selectWords(meanings, knownIds);
             if (learningWords.isEmpty() || knownWords.isEmpty()) {
                 return Optional.empty();
             }
@@ -102,6 +107,7 @@ public class LearningTextService {
                     CEFR level: %s.
                     Known-word pool: %s.
                     Learning-word pool: %s.
+                    Select only words that fit one coherent topic. Most words in both pools may remain unused.
                     Write the requested English paragraph now.
                     """.formatted(
                     cefrLevel,
@@ -129,9 +135,8 @@ public class LearningTextService {
             List<VocabularyWord> knownWords,
             List<VocabularyWord> learningWords
     ) {
-        String currentPrompt = prompt;
         for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
-            String result = requestText(userId, attempt, currentPrompt);
+            String result = requestText(userId, attempt, prompt);
             if (isValid(result, knownWords, learningWords)) {
                 String text = result.trim();
                 log.info(
@@ -151,16 +156,15 @@ public class LearningTextService {
                 String normalizedText = result.trim();
                 log.warn(
                         "ChatGPT returned an invalid learning text: userId={}, attempt={}, characters={}, "
-                                + "latinOnly={}, containsKnownWord={}, containsLearningWord={}",
+                                + "latinOnly={}, usedKnownWords={}, usedLearningWords={}",
                         userId,
                         attempt,
                         characterCount(normalizedText),
                         containsOnlyLatinLetters(normalizedText),
-                        containsAnyWord(normalizedText, knownWords),
-                        containsAnyWord(normalizedText, learningWords)
+                        countUsedWords(normalizedText, knownWords),
+                        countUsedWords(normalizedText, learningWords)
                 );
             }
-            currentPrompt = prompt + "\nThe previous attempt was invalid. Carefully satisfy every constraint, especially the 400-500 character limit and inclusion of at least one word from each pool. Use only a coherent subset; do not force every word into the paragraph.";
         }
         log.warn(
                 "Learning text generation produced no valid result: userId={}, attempts={}",
@@ -184,7 +188,7 @@ public class LearningTextService {
                         ChatGPTRequest.Message.systemMessage(SYSTEM_PROMPT),
                         ChatGPTRequest.Message.userMessage(prompt)
                 ),
-                0.7,
+                0.4,
                 responseFormat
         );
 
@@ -274,7 +278,7 @@ public class LearningTextService {
         }
     }
 
-    private List<VocabularyWord> selectWords(List<MeaningEntity> meanings, Set<Integer> ids, int limit) {
+    private List<VocabularyWord> selectWords(List<MeaningEntity> meanings, Set<Integer> ids) {
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
@@ -292,9 +296,13 @@ public class LearningTextService {
                             new VocabularyWord(meaning.getExternalId(), word)
                     );
                 });
-        return uniqueWords.values().stream()
-                .limit(limit)
-                .toList();
+        List<VocabularyWord> words = new ArrayList<>(uniqueWords.values());
+        if (words.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Collections.shuffle(words);
+        int selectedWordCount = Math.min(MAX_WORDS_PER_POOL, Math.max(1, words.size() / 2));
+        return List.copyOf(words.subList(0, selectedWordCount));
     }
 
     private String joinWords(List<VocabularyWord> words) {
@@ -369,6 +377,12 @@ public class LearningTextService {
 
     private boolean containsAnyWord(String text, List<VocabularyWord> words) {
         return words.stream().anyMatch(word -> containsWord(text, word.text()));
+    }
+
+    private int countUsedWords(String text, List<VocabularyWord> words) {
+        return (int) words.stream()
+                .filter(word -> containsWord(text, word.text()))
+                .count();
     }
 
     private List<Integer> findUsedMeaningIds(String text, List<VocabularyWord> words) {
