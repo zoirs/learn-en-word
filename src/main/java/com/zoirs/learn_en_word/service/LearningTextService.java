@@ -55,7 +55,9 @@ public class LearningTextService {
             
             * Write one coherent, natural paragraph with no title, notes, or Markdown.
             * Length: 400–500 characters including spaces and punctuation.
-            * Match the requested CEFR level.
+            * Make the passage slightly easier than a typical text at the requested CEFR level.
+            * Prefer the more accessible vocabulary and grammatical structures used around that level.
+            * Avoid vocabulary and grammar above the requested level unless a supplied learning word requires it.
             * Choose one clear topic and keep all details logically consistent.
             * Treat both word lists as optional vocabulary pools, not checklists.
             * Use at least one word from each pool, with the exact listed spelling.
@@ -341,11 +343,12 @@ public class LearningTextService {
             return "infer it from the supplied vocabulary";
         }
 
-        int roundedLevel = (int) Math.round(levels.stream()
+        double averageLevel = levels.stream()
                 .mapToInt(Integer::intValue)
                 .average()
-                .orElse(0));
-        return List.of("A1", "A2", "B1", "B2", "C1", "C2").get(roundedLevel);
+                .orElse(0);
+        int slightlyEasierLevel = (int) Math.round(Math.max(0, averageLevel - 0.25));
+        return List.of("A1", "A2", "B1", "B2", "C1", "C2").get(slightlyEasierLevel);
     }
 
     private boolean isValid(

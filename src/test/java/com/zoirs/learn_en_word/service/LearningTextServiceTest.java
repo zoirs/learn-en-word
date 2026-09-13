@@ -92,6 +92,9 @@ class LearningTextServiceTest {
         verify(chatGPTClient).generateResponse(requestCaptor.capture());
         String systemPrompt = requestCaptor.getValue().getMessages().getFirst().getContent();
         String prompt = requestCaptor.getValue().getMessages().get(1).getContent();
+        assertTrue(systemPrompt.contains("slightly easier than a typical text at the requested CEFR level"));
+        assertTrue(systemPrompt.contains("accessible vocabulary and grammatical structures used around that level"));
+        assertTrue(systemPrompt.contains("Avoid vocabulary and grammar above the requested level"));
         assertTrue(systemPrompt.contains("Treat both word lists as optional vocabulary pools, not checklists"));
         assertTrue(systemPrompt.contains("Use only words that fit the topic naturally; ignore the rest"));
         assertTrue(systemPrompt.contains("Prioritize natural English, clear logic, and correct collocations"));
@@ -105,7 +108,7 @@ class LearningTextServiceTest {
     }
 
     @Test
-    void generateText_DoesNotTreatAdvancedLearningWordsAsTheUsersCurrentLevel() {
+    void generateText_UsesConservativeLevelAndIgnoresAdvancedLearningWords() {
         User user = user(Set.of(1, 2, 3, 4), Set.of(5, 6, 7, 8));
         when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
         when(meaningRepository.findByExternalIdIn(anyList())).thenReturn(List.of(
@@ -130,10 +133,36 @@ class LearningTextServiceTest {
         ArgumentCaptor<ChatGPTRequest> requestCaptor = ArgumentCaptor.forClass(ChatGPTRequest.class);
         verify(chatGPTClient).generateResponse(requestCaptor.capture());
         String prompt = requestCaptor.getValue().getMessages().get(1).getContent();
-        assertTrue(prompt.contains("CEFR level: B1"));
+        assertTrue(prompt.contains("CEFR level: A2"));
+        assertFalse(prompt.contains("CEFR level: B1"));
         assertFalse(prompt.contains("CEFR level: C1"));
         assertEquals(2, promptPool(prompt, "Known-word pool: ").size());
         assertEquals(2, promptPool(prompt, "Learning-word pool: ").size());
+    }
+
+    @Test
+    void generateText_KeepsB2ForVocabularyClearlyWithinThatLevel() {
+        User user = user(Set.of(1, 2, 3, 4), Set.of(5));
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(meaningRepository.findByExternalIdIn(anyList())).thenReturn(List.of(
+                meaning(1, "apple", 2, "n"),
+                meaning(2, "book", 3, "n"),
+                meaning(3, "career", 3, "n"),
+                meaning(4, "solution", 3, "n"),
+                meaning(5, "travel", 4, "v")
+        ));
+        when(chatGPTClient.generateResponse(any())).thenReturn(chatGptResponse(VALID_TEXT_WITH_ALL_LEVEL_WORDS));
+
+        GeneratedTextResponse result = learningTextService.generateText("user-1").orElseThrow();
+
+        assertEquals(2, result.knownMeaningIds().size());
+        assertEquals(List.of(5), result.learningMeaningIds());
+
+        ArgumentCaptor<ChatGPTRequest> requestCaptor = ArgumentCaptor.forClass(ChatGPTRequest.class);
+        verify(chatGPTClient).generateResponse(requestCaptor.capture());
+        String prompt = requestCaptor.getValue().getMessages().get(1).getContent();
+        assertTrue(prompt.contains("CEFR level: B2"));
+        assertFalse(prompt.contains("CEFR level: B1"));
     }
 
     @Test
