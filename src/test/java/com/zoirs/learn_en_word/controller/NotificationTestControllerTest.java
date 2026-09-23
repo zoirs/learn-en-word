@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -76,5 +77,54 @@ class NotificationTestControllerTest {
 
         assertEquals(BAD_REQUEST, exception.getStatusCode());
         verifyNoInteractions(notificationService);
+    }
+
+    @Test
+    void sendLearningWordsNotificationSendsNotificationToRequestedUser() throws Exception {
+        User user = new User();
+        user.setId("user-1");
+        user.setFirebaseToken("firebase-token");
+        user.setLearningWords(Set.of(1, 2, 3));
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(notificationService.sendLearningWordsNotification(user)).thenReturn(true);
+
+        ResponseEntity<Boolean> response = controller.sendLearningWordsNotification("user-1");
+
+        assertEquals(Boolean.TRUE, response.getBody());
+        verify(notificationService).sendLearningWordsNotification(user);
+    }
+
+    @Test
+    void sendLearningWordsNotificationReturnsBadRequestWhenUserHasNoLearningWords() {
+        User user = new User();
+        user.setId("user-1");
+        user.setFirebaseToken("firebase-token");
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> controller.sendLearningWordsNotification("user-1")
+        );
+
+        assertEquals(BAD_REQUEST, exception.getStatusCode());
+        verifyNoInteractions(notificationService);
+    }
+
+    @Test
+    void sendLearningWordsNotificationReturnsBadRequestWhenNoValidMeaningsExist() throws Exception {
+        User user = new User();
+        user.setId("user-1");
+        user.setFirebaseToken("firebase-token");
+        user.setLearningWords(Set.of(1));
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(notificationService.sendLearningWordsNotification(user)).thenReturn(false);
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> controller.sendLearningWordsNotification("user-1")
+        );
+
+        assertEquals(BAD_REQUEST, exception.getStatusCode());
+        verify(notificationService).sendLearningWordsNotification(user);
     }
 }

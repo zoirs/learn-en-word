@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,12 +36,7 @@ public class NotificationTestController {
     @PostMapping("/test/{userId}")
     @Operation(summary = "Send a test notification to a specific user")
     public ResponseEntity<Boolean> sendTestNotification(@PathVariable String userId) throws Exception {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found"));
-
-        if (StringUtils.isBlank(user.getFirebaseToken())) {
-            throw new ResponseStatusException(BAD_REQUEST, "User does not have a Firebase token");
-        }
+        User user = getNotificationUser(userId);
 
         log.info("Sending test notification to user: {}", userId);
         notificationService.sendNotification(
@@ -50,5 +46,31 @@ public class NotificationTestController {
         );
 
         return ResponseEntity.ok(true);
+    }
+
+    @PostMapping("/learning-words/{userId}")
+    @Operation(summary = "Send a push notification with learning words to a specific user")
+    public ResponseEntity<Boolean> sendLearningWordsNotification(@PathVariable String userId) throws Exception {
+        User user = getNotificationUser(userId);
+        if (CollectionUtils.isEmpty(user.getLearningWords())) {
+            throw new ResponseStatusException(BAD_REQUEST, "User does not have learning words");
+        }
+
+        log.info("Sending learning words notification to user: {}", userId);
+        if (!notificationService.sendLearningWordsNotification(user)) {
+            throw new ResponseStatusException(BAD_REQUEST, "User does not have valid learning words");
+        }
+
+        return ResponseEntity.ok(true);
+    }
+
+    private User getNotificationUser(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found"));
+
+        if (StringUtils.isBlank(user.getFirebaseToken())) {
+            throw new ResponseStatusException(BAD_REQUEST, "User does not have a Firebase token");
+        }
+        return user;
     }
 }

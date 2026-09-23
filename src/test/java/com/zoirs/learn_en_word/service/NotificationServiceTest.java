@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -89,6 +90,43 @@ class NotificationServiceTest {
                 ),
                 notification
         );
+    }
+
+    @Test
+    void sendLearningWordsNotificationBuildsAndSendsWordReviewPush() throws Exception {
+        User user = createNotificationUser("user-1", SubscriptionPaymentType.REVENUE_CAT);
+        when(meaningRepository.findByExternalIdIn(any())).thenReturn(List.of(
+                createMeaning("apple", "яблоко"),
+                createMeaning("table", "стол"),
+                createMeaning("window", "окно")
+        ));
+        doNothing().when(notificationService).sendNotification(any(User.class), anyString(), anyString());
+
+        boolean sent = notificationService.sendLearningWordsNotification(user);
+
+        assertTrue(sent);
+        ArgumentCaptor<String> titleCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(notificationService).sendNotification(
+                eq(user),
+                titleCaptor.capture(),
+                bodyCaptor.capture()
+        );
+        assertEquals("Время повторить слова", titleCaptor.getValue());
+        assertTrue(bodyCaptor.getValue().contains("Apple - яблоко"));
+        assertTrue(bodyCaptor.getValue().contains("Table - стол"));
+        assertTrue(bodyCaptor.getValue().contains("Window - окно"));
+    }
+
+    @Test
+    void sendLearningWordsNotificationDoesNotSendWhenLearningWordsAreEmpty() throws Exception {
+        User user = createNotificationUser("user-1", SubscriptionPaymentType.REVENUE_CAT);
+        user.setLearningWords(Set.of());
+
+        boolean sent = notificationService.sendLearningWordsNotification(user);
+
+        assertEquals(false, sent);
+        verifyNoInteractions(meaningRepository);
     }
 
     @Test

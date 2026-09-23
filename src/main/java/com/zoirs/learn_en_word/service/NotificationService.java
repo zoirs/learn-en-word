@@ -79,6 +79,22 @@ public class NotificationService {
         }
     }
 
+    public boolean sendLearningWordsNotification(User user) throws Exception {
+        if (CollectionUtils.isEmpty(user.getLearningWords())) {
+            return false;
+        }
+
+        List<MeaningEntity> meanings = selectNotificationMeanings(user);
+        Optional<NotificationContent> notificationContent = buildNotificationContent(meanings, true);
+        if (notificationContent.isEmpty()) {
+            return false;
+        }
+
+        NotificationContent notification = notificationContent.get();
+        sendNotification(user, notification.title(), notification.body());
+        return true;
+    }
+
     void handleFirebaseMessagingException(
             User user,
             String firebaseToken,
