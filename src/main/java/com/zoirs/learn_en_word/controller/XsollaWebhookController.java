@@ -59,7 +59,7 @@ public class XsollaWebhookController {
             case "user_validation": {
                 JSONObject user = message.getJSONObject("user");
                 String id = user.getString("id");
-                String email = user.getString("email");
+                String email = StringUtils.trimToNull(user.optString("email", null));
 
                 User existUser = userService.get(email, id);
                 if (existUser == null) {

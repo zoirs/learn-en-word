@@ -48,6 +48,9 @@ public class UserService {
         if (email == null && id == null) {
             return null;
         }
+        if (email == null) {
+            return userRepository.findById(id).orElse(null);
+        }
 
         User user;
         if (email != null && id != null) {
