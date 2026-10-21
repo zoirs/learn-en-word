@@ -3,6 +3,7 @@ package com.zoirs.learn_en_word.controller;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.req.CreateTokenReq;
 import com.zoirs.learn_en_word.service.UserService;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -41,12 +43,16 @@ public class XsollaController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBasicAuth(merchantId, apiKey);
 
+        Map<String, Object> xsollaUser = new HashMap<>();
+        xsollaUser.put("id", Map.of("value", id));
+        xsollaUser.put("country", Map.of("value", "RU"));
+        String email = StringUtils.trimToNull(req.email());
+        if (email != null) {
+            xsollaUser.put("email", Map.of("value", email));
+        }
+
         Map<String, Object> body = Map.of(
-                "user", Map.of(
-                        "id", Map.of("value", id),
-                        "email", Map.of("value", req.email()),
-                        "country",  Map.of("value", "RU")
-                ),
+                "user", xsollaUser,
                 "settings", Map.of(
                         "project_id", Integer.parseInt(projectId),
                         "return_url", req.returnUrl(),
