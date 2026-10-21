@@ -5,6 +5,8 @@ public record CreateTokenReq(
         String email,
         String planId,
         String returnUrl,
-        boolean sandbox
+        boolean sandbox,
+        String country,
+        String currency
 ) {
 }
