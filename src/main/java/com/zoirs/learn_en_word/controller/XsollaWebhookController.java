@@ -6,7 +6,6 @@ import com.zoirs.learn_en_word.entity.SubscriptionPaymentType;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,9 +58,9 @@ public class XsollaWebhookController {
             case "user_validation": {
                 JSONObject user = message.getJSONObject("user");
                 String id = user.getString("id");
-                String email = StringUtils.trimToNull(user.optString("email", null));
 
-                User existUser = userService.get(email, id);
+                // Email entered at checkout may differ from the account email.
+                User existUser = userService.updateEmailById(id, user.optString("email", null));
                 if (existUser == null) {
                     log.info("User validation return 400");
                     return ResponseEntity.badRequest().body("{\"error\": {\"code\": \"INVALID_USER\",\"message\": \"Invalid user\"}}");

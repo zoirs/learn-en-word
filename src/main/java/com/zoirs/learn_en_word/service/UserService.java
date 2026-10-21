@@ -69,6 +69,23 @@ public class UserService {
     }
 
     @Transactional
+    public User updateEmailById(String id, String email) {
+        User user = userRepository.findById(id).orElse(null);
+        String normalizedEmail = StringUtils.trimToNull(email);
+        if (user == null || normalizedEmail == null || normalizedEmail.equals(user.getEmail())) {
+            return user;
+        }
+        User emailOwner = userRepository.findByEmail(normalizedEmail);
+        if (emailOwner != null && !id.equals(emailOwner.getId())) {
+            log.warn("Cannot update email for user {}: email belongs to another user", id);
+            return user;
+        }
+        user.setEmail(normalizedEmail);
+        userRepository.save(user);
+        return user;
+    }
+
+    @Transactional
     public User createOrUpdatePaymentType(String email, String id, SubscriptionPaymentType paymentType) {
         User user = null;
         if (StringUtils.isNotEmpty(id)) {
