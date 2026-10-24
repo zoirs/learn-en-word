@@ -70,16 +70,19 @@ public class XsollaController {
             xsollaUser.put("email", Map.of("value", email));
         }
 
+        Map<String, Object> settings = new HashMap<>(Map.of(
+                "project_id", Integer.parseInt(projectId),
+                "return_url", req.returnUrl(),
+                "currency", "RUB",
+                "language", "ru"
+        ));
+        if (req.sandbox()) {
+            settings.put("mode", "sandbox");
+        }
+
         Map<String, Object> body = Map.of(
                 "user", xsollaUser,
-                "settings", Map.of(
-                        "project_id", Integer.parseInt(projectId),
-                        "return_url", req.returnUrl(),
-                        "mode", req.sandbox() ? "sandbox" : "live",
-//                        "payment_method", 1380, //банковские карты
-                        "currency", "RUB",
-                        "language", "ru"
-                ),
+                "settings", settings,
                 "purchase", Map.of(
                         "subscription", Map.of("plan_id", req.planId())
                 )

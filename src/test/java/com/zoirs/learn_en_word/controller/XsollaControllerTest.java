@@ -41,6 +41,16 @@ class XsollaControllerTest {
     }
 
     private void assertCreatesToken(String email, String country, String currency) {
+        assertCreatesToken(email, country, currency, true);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void sendsModeOnlyForSandbox(boolean sandbox) {
+        assertCreatesToken(null, "RU", "RUB", sandbox);
+    }
+
+    private void assertCreatesToken(String email, String country, String currency, boolean sandbox) {
         XsollaController controller = new XsollaController();
         UserService service = mock(UserService.class);
         User user = new User();
@@ -57,6 +67,11 @@ class XsollaControllerTest {
                 .andExpect(jsonPath("$.user.id.value").value(user.getId()))
                 .andExpect(jsonPath("$.user.country.value").value("RU"))
                 .andExpect(jsonPath("$.settings.currency").value("RUB"));
+        if (sandbox) {
+            expectation.andExpect(jsonPath("$.settings.mode").value("sandbox"));
+        } else {
+            expectation.andExpect(jsonPath("$.settings.mode").doesNotHaveJsonPath());
+        }
         if (email == null || email.isBlank()) {
             expectation.andExpect(jsonPath("$.user.email").doesNotExist());
         } else {
@@ -65,7 +80,7 @@ class XsollaControllerTest {
         expectation.andRespond(withSuccess("{\"token\":\"test-token\"}", MediaType.APPLICATION_JSON));
 
         var response = controller.createToken(new CreateTokenReq(user.getId(), email, "plan",
-                "https://example.com/return", true, country, currency));
+                "https://example.com/return", sandbox, country, currency));
 
         assertEquals("test-token", response.getBody().get("token"));
         server.verify();
