@@ -3,6 +3,7 @@ package com.zoirs.learn_en_word.controller;
 import com.zoirs.learn_en_word.entity.User;
 import com.zoirs.learn_en_word.req.CreateTokenReq;
 import com.zoirs.learn_en_word.service.UserService;
+import com.zoirs.learn_en_word.service.XsollaPlansService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -32,6 +34,23 @@ public class XsollaController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private XsollaPlansService plansService;
+
+    @GetMapping("/plans")
+    public ResponseEntity<?> getPlans(@RequestParam(name = "country", required = false) String country) {
+        log.info("Loading Xsolla plans, requested country: {}", country == null ? null
+                : country.replace('\r', '_').replace('\n', '_'));
+        try {
+            return ResponseEntity.ok(plansService.getPlans());
+        } catch (RestClientException | IllegalArgumentException e) {
+            log.warn("Unable to load Xsolla subscription plans ({})", e.getClass().getSimpleName());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(
+                    "code", "XSOLLA_PLANS_UNAVAILABLE",
+                    "message", "Не удалось загрузить предложения подписки"));
+        }
+    }
 
     @PostMapping("/token")
     public ResponseEntity<Map<String, Object>> createToken(@RequestBody CreateTokenReq req) {
